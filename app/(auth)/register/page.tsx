@@ -372,7 +372,7 @@ export default function SignupPage() {
           </div>
           {confirmPasswordMismatch && <p className="text-red-500 text-sm mt-1">Passwords do not match</p>}
 
-          <button type="submit" disabled={loading} className="w-full py-3 bg-primary text-white rounded-lg font-bold">
+          <button type="submit" disabled={loading} className="w-full py-3 btn-primary">
             {loading ? "Creating Account..." : "Create Account"}
           </button>
         </form>

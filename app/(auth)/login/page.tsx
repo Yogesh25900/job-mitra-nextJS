@@ -75,16 +75,31 @@ export default function LoginForm() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-gray-100 dark:bg-gray-900">
       <div className="max-w-6xl w-full bg-white dark:bg-gray-800 rounded-2xl shadow-xl flex flex-col md:flex-row">
 
-        {/* IMAGE */}
-        <div className="hidden md:block md:w-1/2 overflow-hidden">
-          <img
-            src={
-              userType === "Talent"
-                ? "https://img.freepik.com/premium-vector/man-sits-bench-reads-word-lg_1314854-10102.jpg"
-                : "https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg"
-            }
-            className="h-full w-full object-cover"
-          />
+       <div className="hidden md:block md:w-1/2 relative overflow-hidden h-[500px] lg:h-auto">
+          <div
+            className="flex w-[200%] transition-transform duration-700 ease-in-out h-full"
+            style={{
+              transform: userType === "Talent" ? "translateX(0%)" : "translateX(-50%)",
+            }}
+          >
+            {/* Talent Image */}
+            <div className="w-1/2 flex items-center justify-center h-full">
+              <img
+                src="https://img.freepik.com/premium-vector/man-sits-bench-reads-word-lg_1314854-10102.jpg"
+                alt="Talent Illustration"
+                className="w-full h-full object-cover"
+              />
+            </div>
+
+            {/* Recruiter Image */}
+            <div className="w-1/2 flex items-center justify-center h-full">
+              <img
+                src="https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
+                alt="Recruiter Illustration"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
         </div>
 
         {/* FORM */}
@@ -92,15 +107,15 @@ export default function LoginForm() {
           <h1 className="text-2xl font-bold mb-4">Welcome back!</h1>
 
           {/* TOGGLE */}
-          <div className="flex bg-gray-200 rounded-lg p-1 mb-6">
+          <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1 mb-6">
             {["Talent", "Recruiter"].map((type) => (
               <button
                 key={type}
                 onClick={() => setUserType(type as any)}
-                className={`flex-1 py-2 rounded ${
+                className={`flex-1 py-2 px-3 sm:px-4 rounded-md text-xs sm:text-sm font-medium transition-colors ${
                   userType === type
-                    ? "bg-white shadow"
-                    : "text-gray-500"
+                    ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm"
+                    : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
                 }`}
               >
                 {type}
@@ -143,7 +158,7 @@ export default function LoginForm() {
               </button>
             </div>
 
-            <button className="w-full bg-primary text-white py-3 rounded">
+            <button className="w-full btn-primary py-3">
               Login
             </button>
           </form>

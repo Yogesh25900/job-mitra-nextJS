@@ -29,7 +29,7 @@ const Navbar = () => {
 
   const candidateLinks = [
     { name: "Home", path: "/" },
-    { name: "Find Jobs", path: "/find-jobs" },
+    { name: "Find Jobs", path: "/findjobs" },
     { name: "Freelance", path: "/freelance" },
     ...(user ? [{ name: "Notification", path: "/notifications" }] : []),
     { name: "About", path: "/about" },
@@ -138,7 +138,7 @@ const Navbar = () => {
                 </Link>
                 <Link
                   href="/register"
-                  className="text-sm font-medium bg-primary text-white px-4 py-2 rounded-lg"
+                  className="text-sm font-medium btn-primary"
                 >
                   Sign Up
                 </Link>
