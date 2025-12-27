@@ -365,25 +365,25 @@ export default function AIJobsPage() {
           <main className="lg:col-span-3">
             {/* Search */}
             <div
-              className="mb-6 flex items-center gap-3 scroll-reveal opacity-0 translate-y-8 transition-all duration-700"
+              className="mb-12 flex items-center gap-3 scroll-reveal opacity-0 translate-y-8 transition-all duration-700"
               data-index="search-bar"
               style={{
                 opacity: visibleCards.has('search-bar') ? 1 : 0,
                 transform: visibleCards.has('search-bar') ? 'translateY(0)' : 'translateY(30px)'
               }}
             >
-              <Search className="text-[#9B7BFF]" size={20} />
+              <Search className="text-[#9B7BFF] flex-shrink-0" size={20} />
               <input
                 type="text"
                 placeholder="Search jobs..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full p-3 rounded-lg bg-white/5 dark:bg-[#1E1F55] border border-gray-200/10 dark:border-white/15 text-sm text-slate-900 dark:text-white placeholder-white/50 dark:placeholder-slate-400 focus:border-[#9B7BFF] focus:outline-none transition-colors"
+                className="flex-1 p-3 rounded-lg bg-white/5 dark:bg-[#1E1F55] border-2 border-gray-200/10 dark:border-white/15 text-sm text-slate-900 dark:text-white placeholder-white/50 dark:placeholder-slate-400 focus:border-[#3B82F6] focus:ring-2 focus:ring-[#3B82F6]/30 focus:outline-none transition-all duration-300"
               />
             </div>
 
             {/* Tabs */}
-            <div className="flex space-x-4 mb-6">
+            <div className="flex flex-wrap gap-3 mb-8">
               <button
                 className={`px-4 py-2 rounded-full font-bold transition-colors ${
                   activeTab === 'all'
