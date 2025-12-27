@@ -31,7 +31,9 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
+.env.local
+.env.development.local
+.env
 
 # vercel
 .vercel
@@ -39,3 +41,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+app/(public)/_components/AudienceSection.tsx
+app/(public)/_components/CTA.tsx
+app/(public)/_components/Features.tsx
+app/(public)/_components/Footer.tsx
+app/(public)/_components/Hero.tsx
+app/(public)/_components/Navbar.tsx
+app/(public)/_components/Stats.tsx
+app/(public)/_components/Testimonials.tsx
+
