@@ -7,8 +7,8 @@ export const API = {
             REGISTER: '/api/talent/register',
         },
         RECRUITER: {
-            LOGIN: '/api/recruiter/login',
-            REGISTER: '/api/recruiter/register',
+            LOGIN: '/api/employer/login',
+            REGISTER: '/api/employer/register',
         }
     }
 }

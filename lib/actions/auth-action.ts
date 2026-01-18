@@ -1,6 +1,6 @@
 "use server";
-import { loginTalent, registerRecruiter, registerTalent } from "@/lib/api/auth"
-import {  LoginTalentInput, SignupRecruiterInput, SignupTalentInput } from "@/app/(auth)/schema"
+import { loginTalent, loginRecruiter, registerRecruiter, registerTalent } from "@/lib/api/auth"
+import {  LoginTalentInput, LoginRecruiterInput, SignupRecruiterInput, SignupTalentInput } from "@/app/(auth)/schema"
 import { setAuthToken, setUserData, clearAuthCookies, getUserData, getAuthToken } from "../cookie"
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -99,6 +99,33 @@ export const getCurrentUser = async () => {
     } catch (error) {
         console.error('getCurrentUser error:', error);
         return null;
+    }
+}
+
+export const handleRecruiterLogin = async (data: LoginRecruiterInput) => {
+    try {
+        const response = await loginRecruiter(data)
+        console.log('handleRecruiterLogin response:', response);
+        
+        if (response.success) {
+            await setAuthToken(response.token)
+            await setUserData(response.data)
+            return {
+                success: true,
+                message: response.message || 'Login successful',
+                data: response
+            }
+        }
+        return {
+            success: false,
+            message: response.message || 'Login failed'
+        }
+    } catch (error: any) {
+        console.error('handleRecruiterLogin error:', error);
+        return { 
+            success: false, 
+            message: error.message || 'Login action failed' 
+        }
     }
 }
 

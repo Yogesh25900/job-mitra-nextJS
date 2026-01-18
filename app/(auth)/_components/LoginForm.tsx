@@ -14,7 +14,7 @@ import {
   type LoginTalentInput,
   type LoginRecruiterInput,
 } from "@/app/(auth)/schema"
-import { handleTalentLogin } from "@/lib/actions/auth-action"
+import { handleTalentLogin, handleRecruiterLogin } from "@/lib/actions/auth-action"
 
 type UserType = "Talent" | "Recruiter"
 
@@ -54,10 +54,9 @@ export default function LoginForm() {
         response = await handleTalentLogin(talentData)
         console.log('Talent login response:', response);
       } else {
-        // TODO: Implement recruiter login
-        toast.error("Recruiter login not yet implemented")
-        setIsLoading(false)
-        return
+        const recruiterData = data as LoginRecruiterInput;
+        response = await handleRecruiterLogin(recruiterData)
+        console.log('Recruiter login response:', response);
       }
       
       // Check if response indicates success
