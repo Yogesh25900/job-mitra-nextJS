@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
-import { Header } from "./(public)/_components/Header";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import Navbar from "./(public)/_components/Navbar";
+import { ToasterProvider } from "@/components/ToasterProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -32,6 +33,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz@20..48&display=block" rel="stylesheet" />
+      </head>
       <body
         className={`
           ${inter.variable}
@@ -40,7 +46,9 @@ export default function RootLayout({
         `}
       >
         <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
-          <Header />
+          {/* <Header /> */}
+                <Navbar />
+          <ToasterProvider />
           {children}
         </GoogleOAuthProvider>
       </body>

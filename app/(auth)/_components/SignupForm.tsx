@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useForm, Controller } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Eye, EyeOff, Check, X } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -12,6 +12,7 @@ import {
   type SignupTalentInput,
   type SignupRecruiterInput,
 } from "@/app/(auth)/schema"
+import { handleRecruiterRegister, handleTalentRegister } from "@/lib/actions/auth-action"
 
 type UserType = "Talent" | "Recruiter"
 
@@ -28,6 +29,7 @@ export default function SignupForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [passwordStrength, setPasswordStrength] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
   const [passwordChecks, setPasswordChecks] = useState<PasswordStrength>({
     length: false,
     uppercase: false,
@@ -43,6 +45,7 @@ export default function SignupForm() {
       lname: "",
       email: "",
       phoneNumber: "",
+      dateOfBirth: "",
       password: "",
       confirmPassword: "",
     },
@@ -77,18 +80,35 @@ export default function SignupForm() {
   }
 
   const onSubmit = async (data: SignupTalentInput | SignupRecruiterInput) => {
+    setIsLoading(true)
     try {
-      // TODO: Replace with actual API call
-      console.log("Signup data:", { ...data, userType })
+      let response;
       
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      if (userType === "Talent") {
+        const talentData = data as SignupTalentInput;
+        response = await handleTalentRegister(talentData as any)
+        console.log('Talent registration response:', response);
+      } else {
+        const recruiterData = data as SignupRecruiterInput;
+        response = await handleRecruiterRegister(recruiterData as any)
+        console.log('Recruiter registration response:', response);
+      }
       
-      toast.success("Account created successfully!")
-      router.push("/login")
-    } catch (error) {
-      toast.error("Signup failed. Please try again.")
+      // Check if response indicates success
+      if (response && response.success) {
+        toast.success(response.message || "Account created successfully!")
+        // Redirect to login or dashboard
+        router.push("/login")
+      } else {
+        // Handle failed response
+        toast.error(response?.message || "Registration failed. Please try again.")
+        console.error("Registration failed:", response)
+      }
+    } catch (error: any) {
       console.error("Signup error:", error)
+      toast.error(error.message || "Signup failed. Please try again.")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -181,7 +201,10 @@ export default function SignupForm() {
           </div>
 
           {/* Signup Form */}
-          <form onSubmit={activeForm.handleSubmit(onSubmit)} className="space-y-4">
+          <form 
+            onSubmit={activeForm.handleSubmit((data) => onSubmit(data))} 
+            className="space-y-4"
+          >
             {/* Talent-specific fields */}
             {userType === "Talent" && (
               <>
@@ -215,18 +238,10 @@ export default function SignupForm() {
                 </div>
 
                 <div>
-                  <Controller
-                    name="dateOfBirth"
-                    control={talentForm.control}
-                    render={({ field }) => (
-                      <input
-                        type="date"
-                        {...field}
-                        value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
-                        onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
-                        className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                      />
-                    )}
+                  <input
+                    type="date"
+                    {...talentForm.register("dateOfBirth")}
+                    className="w-full p-3 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                   />
                   {talentForm.formState.errors.dateOfBirth && (
                     <p className="text-red-500 text-sm mt-1">
@@ -407,10 +422,10 @@ export default function SignupForm() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={activeForm.formState.isSubmitting}
+              disabled={isLoading || activeForm.formState.isSubmitting}
               className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {activeForm.formState.isSubmitting ? "Creating Account..." : "Sign Up"}
+              {isLoading || activeForm.formState.isSubmitting ? "Creating Account..." : "Sign Up"}
             </button>
           </form>
 
