@@ -2,12 +2,17 @@
 
 import { cookies } from "next/headers"
 
-interface UserData {
+export interface UserData {
     _id: string;
-    fname: string;
-    lname: string;
+    fname?: string;
+    lname?: string;
     email: string;
     role: string;
+    phoneNumber?: string;
+    dateOfBirth?: string;
+    companyName?: string;
+    contactName?: string;
+    profilePic?: string;
     createdAt: string;
     updatedAt: string;
     [key: string]: any;

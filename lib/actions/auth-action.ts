@@ -1,8 +1,9 @@
 "use server";
 import { loginTalent, registerRecruiter, registerTalent } from "@/lib/api/auth"
 import {  LoginTalentInput, SignupRecruiterInput, SignupTalentInput } from "@/app/(auth)/schema"
-import { setAuthToken, setUserData, clearAuthCookies } from "../cookie"
+import { setAuthToken, setUserData, clearAuthCookies, getUserData, getAuthToken } from "../cookie"
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
 export const handleTalentRegister = async (data: SignupTalentInput) => {
     try {
@@ -40,7 +41,7 @@ export const handleTalentLogin = async (data: LoginTalentInput) => {
             return {
                 success: true,
                 message: response.message || 'Login successful',
-                data: response.data
+                data: response
             }
         }
         return {
@@ -82,7 +83,27 @@ export const handleRecruiterRegister = async (data: SignupRecruiterInput) => {
     }
 }
 
+export const getCurrentUser = async () => {
+    try {
+        const userData = await getUserData();
+        const token = await getAuthToken();
+        
+        if (!userData || !token) {
+            return null;
+        }
+        
+        return {
+            user: userData,
+            token
+        };
+    } catch (error) {
+        console.error('getCurrentUser error:', error);
+        return null;
+    }
+}
+
 export const handleLogout = async () => {
     await clearAuthCookies();
+    revalidatePath('/', 'layout');
     return redirect('/login');
 }
