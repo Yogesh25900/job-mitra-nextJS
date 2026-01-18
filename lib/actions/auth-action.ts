@@ -105,5 +105,5 @@ export const getCurrentUser = async () => {
 export const handleLogout = async () => {
     await clearAuthCookies();
     revalidatePath('/', 'layout');
-    return redirect('/login');
+    redirect('/login');
 }

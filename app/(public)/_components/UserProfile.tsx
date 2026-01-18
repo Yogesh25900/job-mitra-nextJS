@@ -34,11 +34,19 @@ export default function UserProfile({ user }: UserProfileProps) {
   const onLogout = async () => {
     setIsLoggingOut(true)
     try {
+      toast.success("Logged out...")
       await handleLogout()
-      toast.success("Logged out successfully")
-      router.push("/")
-      router.refresh()
-    } catch (error) {
+      // handleLogout uses redirect() which will throw NEXT_REDIRECT
+      // This line won't be reached, but that's expected
+    } catch (error: any) {
+      // Check if it's the expected redirect error
+      if (error?.message?.includes('NEXT_REDIRECT') || error?.digest?.includes('NEXT_REDIRECT')) {
+        // This is expected - the redirect is working, we can ignore this error
+        console.log('Redirect in progress...')
+        return
+      }
+      // Only show error for actual failures
+      console.error('Logout error:', error)
       toast.error("Logout failed")
       setIsLoggingOut(false)
     }
