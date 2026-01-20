@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Eye, EyeOff } from "lucide-react"
@@ -13,6 +14,7 @@ import {
   type LoginTalentInput,
   type LoginRecruiterInput,
 } from "@/app/(auth)/schema"
+import { handleTalentLogin, handleRecruiterLogin } from "@/lib/actions/auth-action"
 
 type UserType = "Talent" | "Recruiter"
 
@@ -20,6 +22,7 @@ export default function LoginForm() {
   const router = useRouter()
   const [userType, setUserType] = useState<UserType>("Talent")
   const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
   // Separate form instances for Talent and Recruiter
   const talentForm = useForm<LoginTalentInput>({
@@ -42,18 +45,36 @@ export default function LoginForm() {
   const activeForm = userType === "Talent" ? talentForm : recruiterForm
 
   const onSubmit = async (data: LoginTalentInput | LoginRecruiterInput) => {
+    setIsLoading(true)
     try {
-      // TODO: Replace with actual API call
-      console.log("Login data:", { ...data, userType })
+      let response;
       
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      if (userType === "Talent") {
+        const talentData = data as LoginTalentInput;
+        response = await handleTalentLogin(talentData)
+        console.log('Talent login response:', response);
+      } else {
+        const recruiterData = data as LoginRecruiterInput;
+        response = await handleRecruiterLogin(recruiterData)
+        console.log('Recruiter login response:', response);
+      }
       
-      toast.success("Login successful!")
-      router.push("/")
-    } catch (error) {
-      toast.error("Login failed. Please try again.")
+      // Check if response indicates success
+      if (response && response.success) {
+        toast.success(response.message || "Login successful!")
+        // Redirect based on user role
+        router.push("/")
+        router.refresh()
+      } else {
+        // Handle failed response
+        toast.error(response?.message || "Login failed. Please try again.")
+        console.error("Login failed:", response)
+      }
+    } catch (error: any) {
       console.error("Login error:", error)
+      toast.error(error.message || "Login failed. Please try again.")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -63,16 +84,8 @@ export default function LoginForm() {
       return
     }
 
-    try {
-      // TODO: Replace with actual API call
-      console.log("Google login:", { credential: response.credential, userType })
-      
-      toast.success("Google login successful!")
-      router.push("/")
-    } catch (error) {
-      toast.error("Google login failed. Please try again.")
-      console.error("Google login error:", error)
-    }
+    setIsLoading(true)
+ 
   }
 
   const handleUserTypeChange = (type: UserType) => {
@@ -182,6 +195,11 @@ export default function LoginForm() {
                   )}
                 </button>
               </div>
+              <div className="mt-2 text-right">
+                <Link href="/forgot-password" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
               {activeForm.formState.errors.password && (
                 <p className="text-red-500 text-sm mt-1">
                   {activeForm.formState.errors.password.message}
@@ -192,10 +210,10 @@ export default function LoginForm() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={activeForm.formState.isSubmitting}
+              disabled={isLoading || activeForm.formState.isSubmitting}
               className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {activeForm.formState.isSubmitting ? "Logging in..." : "Login"}
+              {isLoading || activeForm.formState.isSubmitting ? "Logging in..." : "Login"}
             </button>
           </form>
 
@@ -223,12 +241,12 @@ export default function LoginForm() {
           {/* Sign up link */}
           <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
             Don&apos;t have an account?{" "}
-            <a
+            <Link
               href="/register"
               className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
             >
               Sign up
-            </a>
+            </Link>
           </p>
         </div>
       </div>

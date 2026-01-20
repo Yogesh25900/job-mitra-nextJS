@@ -37,7 +37,7 @@ export const signupTalentSchema = z
     lname: z.string().min(2, "Last name must be at least 2 characters"),
     email: emailSchema,
     phoneNumber: phoneSchema,
-    dateOfBirth: z.date(),
+    dateOfBirth: z.string().min(1, "Date of birth is required"),
     password: passwordSchema,
     confirmPassword: z.string().min(1, "Confirm password is required"),
   })
