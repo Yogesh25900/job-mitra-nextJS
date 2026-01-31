@@ -1,37 +1,22 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
+import React, { useMemo, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Menu, X } from "lucide-react"
 import ThemeToggle from "./ThemeToggle"
-import GenerateAvatar from "@/components/GenerateAvatar"
-type Profile = {
-  name: string
-  profilePic: string
-  fname: string
-  lname: string
-}
+import { useAuth } from "@/context/AuthContext"
+import UserProfile from "./UserProfile"
 
 const Navbar = () => {
   const pathname = usePathname()
-  const router = useRouter()
-
-  const userrole =
-    typeof window !== "undefined"
-      ? localStorage.getItem("userRole")
-      : null
-
-  const user =
-    typeof window !== "undefined"
-      ? localStorage.getItem("user")
-      : null
+  const { user, isAuthenticated } = useAuth()
 
   const candidateLinks = [
     { name: "Home", path: "/" },
     { name: "Find Jobs", path: "/findjobs" },
     { name: "Freelance", path: "/freelance" },
-    ...(user ? [{ name: "Notification", path: "/notifications" }] : []),
+    ...(isAuthenticated ? [{ name: "Notification", path: "/notifications" }] : []),
     { name: "About", path: "/about" },
     { name: "Contact", path: "/contact" },
   ]
@@ -45,46 +30,14 @@ const Navbar = () => {
     { name: "Contact", path: "/contact" },
   ]
 
-  const links = userrole === "employer" ? employerLinks : candidateLinks
-
-  const [profile, setProfile] = useState<Profile>({
-    name: "",
-    profilePic: "",
-    fname: "",
-    lname: "",
-  })
+  const links = useMemo(() => {
+    const role = user?.role?.toLowerCase()
+    return role === "employer" || role === "recruiter" ? employerLinks : candidateLinks
+  }, [user?.role])
 
   // 🔔 UI-only notification badge (mocked)
   const [unreadCount] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
-
-  useEffect(() => {
-    if (!user) return
-
-    // Mock profile (NO API)
-    if (userrole === "employer") {
-      setProfile({
-        name: "Company Name",
-        profilePic: "",
-        fname: "Company",
-        lname: "",
-      })
-    } else {
-      setProfile({
-        name: "John Doe",
-        profilePic: "",
-        fname: "John",
-        lname: "Doe",
-      })
-    }
-  }, [user, userrole])
-
-  const handleLogout = () => {
-    localStorage.removeItem("jobmitra_token")
-    localStorage.removeItem("user")
-    localStorage.removeItem("userRole")
-    router.push("/")
-  }
 
   return (
     <header className="relative py-4 bg-white dark:bg-slate-950 w-full shadow-sm">
@@ -128,7 +81,7 @@ const Navbar = () => {
             <ThemeToggle />
 
             {/* Login / Signup */}
-            {!user && (
+            {!isAuthenticated && (
               <div className="hidden md:flex items-center space-x-4">
                 <Link
                   href="/login"
@@ -146,34 +99,9 @@ const Navbar = () => {
             )}
 
             {/* Profile */}
-            {user && (
-              <div className="hidden md:block relative group">
-                <div className="cursor-pointer">
-                  <GenerateAvatar
-                    googleProfilePic=""
-                    profilePic={profile.profilePic}
-                    firstName={profile.fname}
-                    lastName={profile.lname}
-                    className="w-10 h-10"
-                  />
-                </div>
-
-                <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-[#1E1F55] border border-white/20 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
-                  {userrole !== "employer" && (
-                    <Link
-                      href="/profile"
-                      className="block px-4 py-2 text-sm hover:bg-[#9B7BFF]/50"
-                    >
-                      Profile
-                    </Link>
-                  )}
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-sm hover:bg-[#9B7BFF]/50"
-                  >
-                    Logout
-                  </button>
-                </div>
+            {isAuthenticated && user && (
+              <div className="hidden md:block">
+                <UserProfile user={user} />
               </div>
             )}
 
@@ -206,7 +134,7 @@ const Navbar = () => {
             </Link>
           ))}
 
-          {!user ? (
+          {!isAuthenticated ? (
             <>
               <Link href="/login" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Login</Link>
               <Link
@@ -218,10 +146,12 @@ const Navbar = () => {
             </>
           ) : (
             <>
-              {userrole !== "employer" && (
-                <Link href="/profile" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Profile</Link>
-              )}
-              <button onClick={handleLogout} className="block text-sm font-medium text-slate-700 dark:text-slate-300">Logout</button>
+              <Link
+                href={user?.role?.toLowerCase() === "employer" || user?.role?.toLowerCase() === "recruiter" ? "/donor/profile" : "/talent/profile"}
+                className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+              >
+                Profile
+              </Link>
             </>
           )}
         </div>

@@ -1,11 +1,13 @@
+"use client";
+
 import Link from "next/link";
 import ThemeToggle from "./ThemeToggle";
 import { Bot } from "lucide-react";
-import { getCurrentUser } from "@/lib/actions/auth-action";
 import UserProfile from "./UserProfile";
+import { useAuth } from "@/context/AuthContext";
 
-export default async function Navbar() {
-  const currentUser = await getCurrentUser();
+export default function Navbar() {
+  const { user, isAuthenticated } = useAuth();
   
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-[#e5e8eb] dark:border-[#283639] bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md">
@@ -36,8 +38,8 @@ export default async function Navbar() {
           <div className="flex items-center gap-3">
             <ThemeToggle />
             
-            {currentUser ? (
-              <UserProfile user={currentUser.user} />
+            {isAuthenticated && user ? (
+              <UserProfile user={user} />
             ) : (
               <>
                 <Link href="/login" 

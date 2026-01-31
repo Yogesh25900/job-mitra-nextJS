@@ -15,11 +15,13 @@ import {
   type LoginRecruiterInput,
 } from "@/app/(auth)/schema"
 import { handleTalentLogin, handleRecruiterLogin } from "@/lib/actions/auth-action"
+import { useAuth } from "@/context/AuthContext"
 
 type UserType = "Talent" | "Recruiter"
 
 export default function LoginForm() {
   const router = useRouter()
+  const { checkAuth } = useAuth()
   const [userType, setUserType] = useState<UserType>("Talent")
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -62,6 +64,7 @@ export default function LoginForm() {
       // Check if response indicates success
       if (response && response.success) {
         toast.success(response.message || "Login successful!")
+        await checkAuth()
         // Redirect based on user role
         router.push("/")
         router.refresh()
