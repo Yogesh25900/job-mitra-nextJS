@@ -1,13 +1,56 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Activity, BarChart3, DollarSign, FileText, LogOut, Settings, Users, Briefcase, TrendingUp, Search, Bell, HelpCircle, MoreVertical } from 'lucide-react';
 import AdminSideBar from './_components/AdminSideBar';
 import { useAuth } from '@/context/AuthContext';
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
-  const { user: authUser } = useAuth();
+  const { user: authUser, isAuthenticated, loading } = useAuth();
+  const [shouldRender, setShouldRender] = useState(false);
+
+  // Protect admin route - only check AFTER loading is complete
+  useEffect(() => {
+    console.log('[ADMIN PAGE] useEffect - loading:', loading, 'isAuthenticated:', isAuthenticated, 'authUser:', authUser);
+    
+    if (loading) {
+      console.log('[ADMIN PAGE] Still loading auth, waiting...');
+      return;
+    }
+    
+    console.log('[ADMIN PAGE] Auth loading complete. Checking permissions...');
+    console.log('[ADMIN PAGE] isAuthenticated:', isAuthenticated);
+    console.log('[ADMIN PAGE] authUser?.role:', authUser?.role);
+    
+    // Only allow if authenticated as admin
+    if (!isAuthenticated) {
+      console.log('[ADMIN PAGE] Not authenticated, redirecting to /admin/login');
+      router.push('/admin/login');
+      return;
+    }
+    
+    if (!authUser || authUser.role !== 'admin') {
+      console.log('[ADMIN PAGE] Not an admin user. Role:', authUser?.role);
+      console.log('[ADMIN PAGE] Redirecting to /admin/login');
+      router.push('/admin/login');
+      return;
+    }
+    
+    console.log('[ADMIN PAGE] User is admin, allowing render');
+    setShouldRender(true);
+  }, [loading, isAuthenticated, authUser, router]);
+
+  // Show loading state while checking auth
+  if (loading || !shouldRender) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      </div>
+    );
+  }
 
   const metrics = [
     {

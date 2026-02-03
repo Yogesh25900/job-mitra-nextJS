@@ -11,6 +11,7 @@ interface AuthContextProps {
     logout: () => Promise<void>;
     loading: boolean;
     checkAuth: () => Promise<void>;
+    refetchAuth: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -23,7 +24,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const router = useRouter();
 
     const checkAuth = async () => {
-        setLoading(true);
         try {
             const result = await handleCheckAuth();
 
@@ -35,6 +35,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setIsAuthenticated(false);
             }
         } catch (err) {
+            console.error('Auth check error:', err);
             setIsAuthenticated(false);
             setUser(null);
         } finally {
@@ -48,9 +49,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
     }, []);
 
-    // Don't render children until auth check is complete
-    if (!hydrated) {
-        return <div></div>;
+    // Don't render children until auth check is complete AND hydration is done
+    if (!hydrated || loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+            </div>
+        );
     }
 
     const logout = async () => {
@@ -73,6 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         logout,
         loading,
         checkAuth,
+        refetchAuth: checkAuth,
     };
 
     return (

@@ -4,6 +4,7 @@ import "./globals.css";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import Navbar from "./(public)/_components/Navbar";
 import { ToasterProvider } from "@/components/ToasterProvider";
+import { AuthProvider } from "@/context/AuthContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -45,12 +46,13 @@ export default function RootLayout({
           antialiased
         `}
       >
+        <AuthProvider>
         <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
           {/* <Header /> */}
-                <Navbar />
           <ToasterProvider />
           {children}
         </GoogleOAuthProvider>
+        </AuthProvider>
       </body>
     </html>
   );

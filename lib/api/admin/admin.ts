@@ -37,10 +37,14 @@ export const createUserAsAdmin = async (userData: any, token: string) => {
     return response.data;
 }
 
-export const getAllUsersAsAdmin = async (token: string) => {
+export const getAllUsersAsAdmin = async (token: string, page: number = 1, size: number = 10) => {
     const response = await axiosInstance.get(API.ADMIN.USER.GETALLUSERS, {
         headers: {
             'Authorization': `Bearer ${token}`,
+        },
+        params: {
+            page,
+            size,
         },
     });
     console.log('getAllUsersAsAdmin response:', response);

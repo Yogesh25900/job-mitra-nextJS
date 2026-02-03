@@ -7,24 +7,39 @@ import { revalidatePath } from 'next/cache'
 
 export const handleAdminLogin = async (data: any) => {
     try {
+        console.log('[SERVER] Starting admin login with email:', data.email);
         const response = await loginAdmin(data)
-        console.log('handleAdminLogin response:', response);
+        console.log('[SERVER] Login API response:', response);
+        console.log('[SERVER] Response data:', response?.data);
+        console.log('[SERVER] Response data role:', response?.data?.role);
         
         if (response.success) {
+            console.log('[SERVER] Login successful, storing user data and token');
             await setAuthToken(response.token)
+            console.log('[SERVER] Token set');
+            
+            console.log('[SERVER] Setting user data:', response.data);
             await setUserData(response.data)
+            console.log('[SERVER] User data set');
+            
+            // Revalidate the auth check path to ensure AuthContext picks up changes
+            console.log('[SERVER] Revalidating cache');
+            revalidatePath('/', 'layout')
+            console.log('[SERVER] Cache revalidated');
+            
             return {
                 success: true,
                 message: response.message || 'Login successful',
                 data: response
             }
         }
+        console.log('[SERVER] Login failed:', response.message);
         return {
             success: false,
             message: response.message || 'Login failed'
         }
     } catch (error: any) {
-        console.error('handleAdminLogin error:', error);
+        console.error('[SERVER] handleAdminLogin error:', error);
         return { 
             success: false, 
             message: error.message || 'Login action failed' 
@@ -55,19 +70,20 @@ export const handleCreateUserAsAdmin = async (userData: any) => {
     }
 
 }
-    export const handleGetAllUsersAsAdmin = async () => {
+    export const handleGetAllUsersAsAdmin = async (page: number = 1, size: number = 10) => {
     try{
         
     const token = await getAuthToken();
     
     if (!token) throw new Error('Unauthorized');
-    const response = await getAllUsersAsAdmin(token);
+    const response = await getAllUsersAsAdmin(token, page, size);
     console.log('handleGetAllUsersAsAdmin response:', response);
     if(response.success){
         return {
                 success: true,
                 message: 'Fetch successful',
-                data: response.data
+                data: response.data,
+                metadata: response.metadata,
             }
     }
         return {

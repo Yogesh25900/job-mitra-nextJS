@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, Clock, Layers, Wallet, Code, TrendingUp, Check, Bot } from 'lucide-react';
+import { handleGetAllJobs } from '@/lib/actions/job-actions';
+import toast from 'react-hot-toast';
 
 type Filters = {
   fullTime: boolean;
@@ -28,6 +30,10 @@ type Job = {
   icon?: JobIcon;
   salary?: number;
   _id?: string;
+  jobLocation?: string;
+  jobCategory?: string;
+  status?: string;
+  createdAt?: string;
 };
 
 type SortBy = 'Match Score (Highest)' | 'Salary';
@@ -55,6 +61,8 @@ export default function AIJobsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [visibleCount, setVisibleCount] = useState(5);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [metadata, setMetadata] = useState({ total: 0, page: 1, size: 100, totalPages: 0 });
 
   const observerRef = useRef<IntersectionObserver | null>(null);
 
@@ -66,108 +74,57 @@ export default function AIJobsPage() {
     'remote'
   ];
 
-  const mockJobs: Job[] = [
-    {
-      id: '1',
-      jobTitle: 'Frontend Engineer',
-      companyName: 'Nova Labs',
-      jobType: 'Full-time',
-      experienceLevel: 'Mid-Level',
-      tags: ['React', 'TypeScript', 'UI'],
-      matchScore: 92,
-      isRecommended: true,
-      icon: 'Code'
-    },
-    {
-      id: '2',
-      jobTitle: 'Data Scientist',
-      companyName: 'Insight AI',
-      jobType: 'Remote',
-      experienceLevel: 'Senior/Lead',
-      tags: ['Python', 'ML', 'NLP'],
-      matchScore: 88,
-      isRecommended: true,
-      icon: 'TrendingUp'
-    },
-    {
-      id: '3',
-      jobTitle: 'Backend Developer',
-      companyName: 'CloudForge',
-      jobType: 'Freelance',
-      experienceLevel: 'Entry Level',
-      tags: ['Node.js', 'APIs', 'SQL'],
-      matchScore: 76,
-      isRecommended: false,
-      icon: 'Layers'
-    },
-    {
-      id: '4',
-      jobTitle: 'Product Designer',
-      companyName: 'PixelWorks',
-      jobType: 'Part-time',
-      experienceLevel: 'Mid-Level',
-      tags: ['Figma', 'UX', 'UI'],
-      matchScore: 81,
-      isRecommended: false,
-      icon: 'Bot'
-    },
-    {
-      id: '5',
-      jobTitle: 'DevOps Engineer',
-      companyName: 'ShipIt',
-      jobType: 'Full-time',
-      experienceLevel: 'Senior/Lead',
-      tags: ['AWS', 'CI/CD', 'Kubernetes'],
-      matchScore: 85,
-      isRecommended: true,
-      icon: 'TrendingUp'
-    },
-    {
-      id: '6',
-      jobTitle: 'Mobile Developer',
-      companyName: 'Appify',
-      jobType: 'Remote',
-      experienceLevel: 'Mid-Level',
-      tags: ['React Native', 'iOS', 'Android'],
-      matchScore: 73,
-      isRecommended: false,
-      icon: 'Clock'
-    }
-  ];
-
   // Initialize search query from URL params
   useEffect(() => {
     setSearchQuery(searchParams.get('search') || '');
   }, [searchParams]);
 
-  // Load jobs
+  // Fetch jobs from backend
   useEffect(() => {
-    setLoading(true);
-    setVisibleCount(5);
+    const fetchJobs = async () => {
+      setLoading(true);
+      try {
+        const response = await handleGetAllJobs(currentPage, 100); // Fetch large batch for client-side filtering
+        console.log('Fetched jobs response:', response);
 
-    const data = activeTab === 'recommended'
-      ? mockJobs.filter(job => job.isRecommended)
-      : mockJobs;
+        if (response.success) {
+          const normalizedJobs: Job[] = response.data.map((job: any, idx: number) => ({
+            id: job._id || `job-${idx}`,
+            _id: job._id,
+            jobTitle: job.jobTitle,
+            companyName: job.companyName,
+            jobType: job.jobType,
+            experienceLevel: job.experienceLevel,
+            tags: job.tags || [],
+            companyProfilePicPath: job.companyProfilePicPath,
+            jobLocation: job.jobLocation,
+            jobCategory: job.jobCategory,
+            status: job.status,
+            createdAt: job.createdAt,
+            // Calculate match score based on job status or randomly for demo
+            matchScore: job.status === 'active' ? Math.floor(Math.random() * 30) + 70 : Math.floor(Math.random() * 40) + 50,
+            isRecommended: job.status === 'active', // Active jobs are recommended
+            isNew: new Date(job.createdAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000, // Jobs created in last 7 days
+          }));
 
-    const normalizedJobs: Job[] = data.map((j, idx) => ({
-      ...j,
-      id: j.id ?? j._id ?? `job-${idx}`
-    }));
-    setJobs(normalizedJobs);
+          setJobs(normalizedJobs);
+          
+          if (response.metadata) {
+            setMetadata(response.metadata);
+          }
+        } else {
+          toast.error(response.message || 'Failed to fetch jobs');
+        }
+      } catch (error) {
+        console.error('Error fetching jobs:', error);
+        toast.error('Error fetching jobs');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    setVisibleCards(prev => new Set([
-      ...prev,
-      'header',
-      'subtitle',
-      'sidebar',
-      'loadmore',
-      'search-bar',
-      ...normalizedJobs.map((_, i) => `job-${i}`),
-      ...[...Array(6)].map((_, i) => `placeholder-${i}`)
-    ]));
-
-    setLoading(false);
-  }, [activeTab]);
+    fetchJobs();
+  }, [currentPage]);
 
   // Scroll reveal effect
   useEffect(() => {
@@ -195,6 +152,17 @@ export default function AIJobsPage() {
     elements.forEach(el => {
       if (observerRef.current) observerRef.current.observe(el);
     });
+
+    // Add initial visible cards
+    setVisibleCards(prev => new Set([
+      ...prev,
+      'header',
+      'subtitle',
+      'sidebar',
+      'loadmore',
+      'search-bar',
+      ...jobs.map((_, i) => `job-${i}`),
+    ]));
 
     return () => {
       if (observerRef.current) observerRef.current.disconnect();
