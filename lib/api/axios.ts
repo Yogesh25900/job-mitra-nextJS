@@ -7,6 +7,16 @@ const axiosInstance = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
+    withCredentials: true,
+});
+
+// Remove Content-Type header for FormData requests to allow multipart/form-data
+axiosInstance.interceptors.request.use((config) => {
+    if (config.data instanceof FormData) {
+        delete config.headers['Content-Type'];
+        console.log(' [AXIOS] Detected FormData - removed Content-Type header for multipart/form-data');
+    }
+    return config;
 });
 
 // Request interceptor for API calls
