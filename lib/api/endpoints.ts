@@ -16,7 +16,7 @@ export const API = {
             LOGIN: '/api/admin/login',
         }
     },
-      ADMIN:{
+    ADMIN:{
         USER:{
             CREATE: '/api/admin/users',
             GETALLUSERS: '/api/admin/users',
@@ -24,5 +24,14 @@ export const API = {
             UPDATEUSERBYID: (id: string) => `/api/admin/users/${id}`,
             DELETEUSERBYID: (id: string) => `/api/admin/users/${id}`,
         }
+    },
+    JOB: {
+        GETALLJOBS: '/api/jobs',
+        GETJOBBYID: (id: string) => `/api/jobs/${id}`,
+        SEARCHJOBS: '/api/jobs/search',
+        CREATEJOB: '/api/jobs',
+        UPDATEJOB: (id: string) => `/api/jobs/${id}`,
+        DELETEJOB: (id: string) => `/api/jobs/${id}`,
+        GETMYJOBS: '/api/jobs/employer/my-jobs',
     }
 }
