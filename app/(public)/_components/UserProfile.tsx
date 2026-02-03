@@ -4,8 +4,10 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { LogOut, User } from "lucide-react"
 import GenerateAvatar from "@/components/GenerateAvatar"
-import { handleLogout } from "@/lib/actions/auth-action"
 import toast from "react-hot-toast"
+import { useAuth } from "@/context/AuthContext"
+import { getUserAvatarUrl } from "@/lib/utils/imageUrl"
+import LogoutConfirmModal from "@/components/LogoutConfirmModal"
 
 type UserProfileProps = {
   user: {
@@ -13,6 +15,9 @@ type UserProfileProps = {
     lname?: string
     email?: string
     profilePic?: string
+    profilePicturePath?: string
+    avatar?: string
+    googleProfilePicture?: string
     role?: string
     companyName?: string
     contactName?: string
@@ -23,6 +28,8 @@ export default function UserProfile({ user }: UserProfileProps) {
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [showLogoutModal, setShowLogoutModal] = useState(false)
+  const { logout } = useAuth()
 
   const displayName = user.fname 
     ? `${user.fname} ${user.lname || ''}`.trim()
@@ -30,27 +37,39 @@ export default function UserProfile({ user }: UserProfileProps) {
 
   const firstName = user.fname || user.contactName?.split(' ')[0] || ''
   const lastName = user.lname || user.contactName?.split(' ')[1] || ''
+  const hasCustomAvatar = Boolean(
+    user.profilePicturePath || user.profilePic || user.avatar || user.googleProfilePicture
+  )
+  const avatarUrl = hasCustomAvatar
+    ? getUserAvatarUrl(
+        user.profilePicturePath || user.profilePic,
+        user.avatar || user.googleProfilePicture,
+        user.email || ""
+      )
+    : undefined
+
+  const handleLogoutClick = () => {
+    setIsOpen(false);
+    setShowLogoutModal(true);
+  };
 
   const onLogout = async () => {
     setIsLoggingOut(true)
     try {
       toast.success("Logged out...")
-      await handleLogout()
-      // handleLogout uses redirect() which will throw NEXT_REDIRECT
-      // This line won't be reached, but that's expected
+      await logout()
+      setShowLogoutModal(false)
     } catch (error: any) {
-      // Check if it's the expected redirect error
-      if (error?.message?.includes('NEXT_REDIRECT') || error?.digest?.includes('NEXT_REDIRECT')) {
-        // This is expected - the redirect is working, we can ignore this error
-        console.log('Redirect in progress...')
-        return
-      }
-      // Only show error for actual failures
       console.error('Logout error:', error)
       toast.error("Logout failed")
+    } finally {
       setIsLoggingOut(false)
     }
   }
+
+  const profilePath = user.role?.toLowerCase() === "recruiter" || user.role?.toLowerCase() === "employer"
+    ? "/employer/profile"
+    : "/talent/profile"
 
   return (
     <div className="relative">
@@ -61,7 +80,7 @@ export default function UserProfile({ user }: UserProfileProps) {
         aria-label="User menu"
       >
         <GenerateAvatar
-          profilePic={user.profilePic}
+          profilePic={avatarUrl}
           firstName={firstName}
           lastName={lastName}
           className="w-9 h-9"
@@ -94,7 +113,7 @@ export default function UserProfile({ user }: UserProfileProps) {
               <button
                 onClick={() => {
                   setIsOpen(false)
-                  router.push('/profile')
+                  router.push(profilePath)
                 }}
                 className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
@@ -103,17 +122,24 @@ export default function UserProfile({ user }: UserProfileProps) {
               </button>
               
               <button
-                onClick={onLogout}
-                disabled={isLoggingOut}
-                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                onClick={handleLogoutClick}
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 <LogOut className="w-4 h-4" />
-                <span>{isLoggingOut ? "Logging out..." : "Logout"}</span>
+                <span>Logout</span>
               </button>
             </div>
           </div>
         </>
       )}
+
+      {/* Logout Confirmation Modal */}
+      <LogoutConfirmModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={onLogout}
+        isLoading={isLoggingOut}
+      />
     </div>
   )
 }

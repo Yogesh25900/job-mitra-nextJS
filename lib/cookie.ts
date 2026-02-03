@@ -32,6 +32,8 @@ export const setAuthToken = async (token: string) => {
     })
 }
 
+
+
 export const getAuthToken = async () => {
     const cookieStore = await cookies();
     return cookieStore.get('auth_token')?.value || null;
