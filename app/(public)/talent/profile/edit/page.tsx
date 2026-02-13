@@ -1,4 +1,4 @@
-import EditProfileForm from "./_components/EditProfileForm";
+import ProfileEditForm from "../../../_components/profile/ProfileEditForm";
 
 export const metadata = {
   title: "Edit Profile | Job Mitra",
@@ -6,5 +6,5 @@ export const metadata = {
 };
 
 export default function EditProfilePage() {
-  return <EditProfileForm />;
+  return <ProfileEditForm role="talent" viewPath="/talent/profile" />;
 }
