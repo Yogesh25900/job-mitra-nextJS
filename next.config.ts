@@ -5,9 +5,16 @@ const backendURL =
 
 const isDEV = backendURL.startsWith("http://localhost");
 
+// Extract port from backend URL
+const getBackendPort = (url: string): string => {
+  const match = url.match(/:([0-9]+)$/);
+  return match ? match[1] : "5050";
+};
+
+const backendPort = getBackendPort(backendURL);
 
 const nextConfig: NextConfig = {
-   experimental: {
+  experimental: {
     serverActions: {
       bodySizeLimit: "50mb",
     },
@@ -18,12 +25,23 @@ const nextConfig: NextConfig = {
       {
         protocol: "http",
         hostname: "localhost",
-        port: "5050",
+        port: backendPort,
+        pathname: "/public/profile_pictures/**",
+      },
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: backendPort,
         pathname: "/profile_pictures/**",
       },
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: backendPort,
+        pathname: "/logos/**",
+      }
     ],
   },
-
 };
 
 export default nextConfig;
