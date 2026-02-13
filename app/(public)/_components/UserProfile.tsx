@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { LogOut, User } from "lucide-react"
+import { LogOut, User, LayoutDashboard } from "lucide-react"
 import GenerateAvatar from "@/components/GenerateAvatar"
 import toast from "react-hot-toast"
 import { useAuth } from "@/context/AuthContext"
@@ -16,6 +16,7 @@ type UserProfileProps = {
     email?: string
     profilePic?: string
     profilePicturePath?: string
+    logoPath?: string
     avatar?: string
     googleProfilePicture?: string
     role?: string
@@ -71,6 +72,10 @@ export default function UserProfile({ user }: UserProfileProps) {
     ? "/employer/profile"
     : "/talent/profile"
 
+  const dashboardPath = user.role?.toLowerCase() === "recruiter" || user.role?.toLowerCase() === "employer"
+    ? "/employer"
+    : "/talent"
+
   return (
     <div className="relative">
       {/* Profile Button */}
@@ -119,6 +124,17 @@ export default function UserProfile({ user }: UserProfileProps) {
               >
                 <User className="w-4 h-4" />
                 <span>Profile</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsOpen(false)
+                  router.push(dashboardPath)
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span>Dashboard</span>
               </button>
               
               <button
