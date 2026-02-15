@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthToken, getUserData} from "@/lib/cookie";
 
-const publicRoutes = ['/login', '/register', '/forget-password', '/reset-password', '/admin/login'];
+const publicRoutes = [
+    '/login',
+    '/register',
+    '/forgot-password',
+    '/reset-password',
+    '/verify-otp',
+    '/talent/login',
+    '/recruiter/login',
+    '/talent/forgot-password',
+    '/recruiter/forgot-password',
+    '/admin/login'
+];
 const adminRoutes = ['/admin'];
 const userRoutes = ['/user'];
 
@@ -39,6 +50,13 @@ export const config = {
         '/admin/:path*',
         '/user/:path*',
         '/login',
+        '/forgot-password',
+        '/verify-otp',
+        '/reset-password',
+        '/talent/login',
+        '/recruiter/login',
+        '/talent/forgot-password',
+        '/recruiter/forgot-password',
         '/admin/login',
         '/register'
     ]
