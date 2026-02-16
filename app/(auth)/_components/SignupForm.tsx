@@ -87,25 +87,21 @@ export default function SignupForm() {
       if (userType === "Talent") {
         const talentData = data as SignupTalentInput;
         response = await handleTalentRegister(talentData as any)
-        console.log('Talent registration response:', response);
       } else {
         const recruiterData = data as SignupRecruiterInput;
         response = await handleRecruiterRegister(recruiterData as any)
-        console.log('Recruiter registration response:', response);
       }
       
       // Check if response indicates success
       if (response && response.success) {
         toast.success(response.message || "Account created successfully!")
         // Redirect to login or dashboard
-        router.push("/login")
+        router.push(userType === "Talent" ? "/talent/login" : "/recruiter/login")
       } else {
         // Handle failed response
         toast.error(response?.message || "Registration failed. Please try again.")
-        console.error("Registration failed:", response)
       }
     } catch (error: any) {
-      console.error("Signup error:", error)
       toast.error(error.message || "Signup failed. Please try again.")
     } finally {
       setIsLoading(false)
@@ -433,7 +429,7 @@ export default function SignupForm() {
           <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
             Already have an account?{" "}
             <a
-              href="/login"
+              href={userType === "Talent" ? "/talent/login" : "/recruiter/login"}
               className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
             >
               Login
