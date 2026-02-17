@@ -1,6 +1,7 @@
 import { LoginTalentInput, SignupTalentInput } from "@/app/(auth)/schema"
 import axios from "./axios"
 import { API } from "./endpoints"
+import { getAuthToken } from "../cookie"
 
 
 export const registerTalent = async (registerData: SignupTalentInput) => {
@@ -19,6 +20,16 @@ export const loginTalent = async (loginData: LoginTalentInput) => {
         return response.data
     } catch (error: any) {
         console.error('loginTalent error:', error);
+        throw error;
+    }
+}
+
+export const googleLoginTalent = async (credential: string) => {
+    try {
+        const response = await axios.post(API.AUTH.TALENT.GOOGLE_LOGIN, { credential })
+        return response.data
+    } catch (error: any) {
+        console.error('googleLoginTalent error:', error);
         throw error;
     }
 }
@@ -43,6 +54,16 @@ export const loginRecruiter = async (loginData: any) => {
     }
 }
 
+export const googleLoginRecruiter = async (credential: string) => {
+    try {
+        const response = await axios.post(API.AUTH.RECRUITER.GOOGLE_LOGIN, { credential })
+        return response.data
+    } catch (error: any) {
+        console.error('googleLoginRecruiter error:', error);
+        throw error;
+    }
+}
+
 export const loginAdmin = async (loginData: any) => {
     try {
         const response = await axios.post(API.AUTH.ADMIN.LOGIN, loginData)
@@ -56,8 +77,9 @@ export const loginAdmin = async (loginData: any) => {
 
 //talent 
 
-export const getTalentProfileById = async (token: string,id: string) => {
+export const getTalentProfileById = async (id: string) => {
     try{
+        const token = await getAuthToken();
         const response = await axios.get(`${API.AUTH.TALENT.GETPROFILEBYID}/${id}`, {
             headers: {
                 Authorization: `Bearer ${token}`,
@@ -72,26 +94,26 @@ export const getTalentProfileById = async (token: string,id: string) => {
 
 export const getTalentProfileMe = async (token: string) => {
     try{
-        console.log('🎯 [API] getTalentProfileMe - Making GET request');
-        console.log('📍 [API] Endpoint:', API.AUTH.TALENT.GETPROFILEMYSELF);
+        console.log(' [API] getTalentProfileMe - Making GET request');
+        console.log(' [API] Endpoint:', API.AUTH.TALENT.GETPROFILEMYSELF);
         const response = await axios.get(API.AUTH.TALENT.GETPROFILEMYSELF, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
         });
-        console.log('✅ [API] getTalentProfileMe - Response received');
+        console.log(' [API] getTalentProfileMe - Response received');
         return response.data;
     } catch (error: any) {
-        console.error('❌ [API] getTalentProfileMe error:', error?.response?.status, error?.response?.data || error?.message);
+        console.error(' [API] getTalentProfileMe error:', error?.response?.status, error?.response?.data || error?.message);
         throw error;
     }
 }
 
 export const talentProfileEdit = async (formData: FormData, token: string, id: string) => {
     try{
-        console.log('🚀 [FRONTEND] talentProfileEdit called');
-        console.log('📤 [FRONTEND] URL:', `${API.AUTH.TALENT.EDITPROFILE}/${id}`);
-        console.log('📤 [FRONTEND] FormData entries:');
+        console.log(' [FRONTEND] talentProfileEdit called');
+        console.log(' [FRONTEND] URL:', `${API.AUTH.TALENT.EDITPROFILE}/${id}`);
+        console.log(' [FRONTEND] FormData entries:');
         for (let [key, value] of formData.entries()) {
             if (value instanceof File) {
                 console.log(`  - ${key}: File(${value.name}, ${value.size} bytes)`);
@@ -105,10 +127,10 @@ export const talentProfileEdit = async (formData: FormData, token: string, id: s
                 Authorization: `Bearer ${token}`,
             },
         });
-        console.log('✅ [FRONTEND] Response:', response.data);
+        console.log(' [FRONTEND] Response:', response.data);
         return response.data;
     } catch (error: any) {
-        console.error('❌ [FRONTEND] Error:', error.response?.data || error.message);
+        console.error(' [FRONTEND] Error:', error.response?.data || error.message);
         throw error;
     }
 }
@@ -116,14 +138,14 @@ export const talentProfileEdit = async (formData: FormData, token: string, id: s
 export const uploadTalentProfilePhoto = async (formData: FormData, token: string) => {
     try{
         if (!token) {
-            console.error('❌ No auth token provided');
+            console.error(' No auth token provided');
             throw new Error('Authentication token not found');
         }
-        console.log('🔑 Token present, uploading...');
-        console.log('📤 Uploading to:', API.AUTH.TALENT.UPLOADPHOTO);
+        console.log(' Token present, uploading...');
+        console.log(' Uploading to:', API.AUTH.TALENT.UPLOADPHOTO);
         
         // Debug: Log FormData
-        console.log('📋 FormData entries before sending:');
+        console.log(' FormData entries before sending:');
         for (let [key, value] of formData.entries()) {
           console.log(`  - ${key}:`, value instanceof File ? `File: ${(value as File).name} (${(value as File).size} bytes)` : value);
         }
@@ -138,15 +160,47 @@ export const uploadTalentProfilePhoto = async (formData: FormData, token: string
             }
             );
 
-        console.log('✅ Upload response:', response.data);
+        console.log(' Upload response:', response.data);
         return response.data;
     } catch (error: any) {
-        console.error('❌ uploadTalentProfilePhoto error:', {
+        console.error(' uploadTalentProfilePhoto error:', {
             message: error.message,
             status: error.response?.status,
             statusText: error.response?.statusText,
             data: error.response?.data,
         });
+        throw error;
+    }
+}
+
+// recruiter/employer
+
+export const getRecruiterProfileById = async (id: string, token?: string) => {
+    try{
+        const response = await axios.get(`${API.AUTH.RECRUITER.GETPROFILEBYID}/${id}`, {
+            headers: token
+                ? {
+                    Authorization: `Bearer ${token}`,
+                }
+                : undefined,
+        });
+        return response.data;
+    } catch (error: any) {
+        console.error('getRecruiterProfileById error:', error);
+        throw error;
+    }
+}
+
+export const recruiterProfileEdit = async (formData: FormData, token: string, id: string) => {
+    try{
+        const response = await axios.put(`${API.AUTH.RECRUITER.EDITPROFILE}/${id}`, formData, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+        return response.data;
+    } catch (error: any) {
+        console.error('recruiterProfileEdit error:', error?.response?.data || error?.message);
         throw error;
     }
 }
