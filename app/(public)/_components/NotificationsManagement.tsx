@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, AlertCircle, Loader2, Send } from 'lucide-react';
-import toast from 'react-hot-toast';
 import {
   handleGetNotifications,
   handleSendTestNotification,
 } from '@/lib/actions/notifications-actions';
 import { getUserData } from '@/lib/cookie';
 import type { Notification } from '@/lib/api/notifications';
+import { useToast } from './ToastProvider';
 
 interface NotificationsState {
   notifications: Notification[];
@@ -22,6 +22,8 @@ interface NotificationsState {
 }
 
 export default function NotificationsManagement() {
+  // Use custom toast hook
+  const { showToast } = useToast();
   const [state, setState] = useState<NotificationsState>({
     notifications: [],
     isLoading: true,
@@ -69,50 +71,37 @@ export default function NotificationsManagement() {
     try {
       // Dynamically import Socket.IO client
       const { io } = require('socket.io-client');
-      
       const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
-      
-      // Connect to backend
       const socket = io(backendUrl, {
         reconnection: true,
         reconnectionDelay: 1000,
         reconnectionDelayMax: 5000,
         reconnectionAttempts: 5,
       });
-
       socketRef.current = socket;
-
-        // Register user with their userId to receive notifications
-        socket.on('connect', () => {
-          console.log('✅ Socket.IO Connected');
-          // Register this socket with the user's ID
-          socket.emit('register', userId);
-          console.log('📝 Registered with userId:', userId);
-        });
-
+      socket.on('connect', () => {
+        console.log('✅ Socket.IO Connected');
+        socket.emit('register', userId);
+        console.log('📝 Registered with userId:', userId);
+      });
       // Listen for incoming notifications
       socket.on('notification', (notification: any) => {
         console.log('📢 [Socket.IO] New notification received:', notification);
-        
-        // Show toast for new notification
-        if (notification.title) {
-          toast.success(`${notification.title}: ${notification.message}`, {
-            duration: 5,
-            icon: '🔔',
-          });
-        }
-
+        // Show custom toast for new notification
+        showToast({
+          title: notification.title || 'Notification',
+          message: notification.message || '',
+          type: notification.type || 'info',
+        });
         // Add notification to list at the top
         setState((prev) => ({
           ...prev,
           notifications: [notification, ...prev.notifications],
         }));
       });
-
       socket.on('disconnect', () => {
         console.log('❌ Socket.IO Disconnected');
       });
-
       socket.on('error', (error: any) => {
         console.error('⚠️ Socket.IO Error:', error);
       });
@@ -130,7 +119,7 @@ export default function NotificationsManagement() {
     if (result.success) {
       // Sort by createdAt descending (newest first)
       const sortedNotifications = (result.notifications || []).sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        (a: { createdAt: string | number | Date; }, b: { createdAt: string | number | Date; }) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
 
       setState((prev) => ({
@@ -149,7 +138,7 @@ export default function NotificationsManagement() {
         isLoading: false,
         notifications: [],
       }));
-      toast.error(errorMsg);
+      showToast({ title: 'Error', message: errorMsg, type: 'error' });
     }
   };
 
@@ -157,7 +146,7 @@ export default function NotificationsManagement() {
     setState((prev) => ({ ...prev, isRefreshing: true }));
     await fetchNotifications(state.currentPage);
     setState((prev) => ({ ...prev, isRefreshing: false }));
-    toast.success('Notifications refreshed');
+    showToast({ title: 'Refreshed', message: 'Notifications refreshed', type: 'success' });
   };
 
   const handlePreviousPage = () => {
@@ -178,13 +167,13 @@ export default function NotificationsManagement() {
     const result = await handleSendTestNotification();
 
     if (result.success) {
-      toast.success('Test notification sent! 🔔');
+      showToast({ title: 'Test Notification', message: 'Test notification sent! 🔔', type: 'success' });
       // Auto-refresh after a short delay to fetch the new notification
       setTimeout(() => {
         fetchNotifications();
       }, 1500);
     } else {
-      toast.error(result.error || 'Failed to send test notification');
+      showToast({ title: 'Error', message: result.error || 'Failed to send test notification', type: 'error' });
     }
 
     setState((prev) => ({ ...prev, showTestButton: true }));

@@ -68,11 +68,15 @@ export default function UserProfile({ user }: UserProfileProps) {
     }
   }
 
-  const profilePath = user.role?.toLowerCase() === "recruiter" || user.role?.toLowerCase() === "employer"
+  const profilePath = user.role?.toLowerCase() === "admin"
+    ? "/admin/profile"
+    : user.role?.toLowerCase() === "recruiter" || user.role?.toLowerCase() === "employer"
     ? "/employer/profile"
     : "/talent/profile"
 
-  const dashboardPath = user.role?.toLowerCase() === "recruiter" || user.role?.toLowerCase() === "employer"
+  const dashboardPath = user.role?.toLowerCase() === "admin"
+    ? "/admin"
+    : user.role?.toLowerCase() === "recruiter" || user.role?.toLowerCase() === "employer"
     ? "/employer"
     : "/talent"
 
