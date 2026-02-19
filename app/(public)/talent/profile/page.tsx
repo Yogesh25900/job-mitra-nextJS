@@ -4,8 +4,8 @@ import ProfileView from "../../_components/profile/ProfileView"
 
 export default function TalentProfilePage() {
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-6 w-full">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 w-full">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             My Profile
