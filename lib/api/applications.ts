@@ -29,6 +29,12 @@ export interface ApplicationResponse {
   error?: string;
 }
 
+export interface MyApplicationStats {
+  totalApplications: number;
+  shortlisted: number;
+  rejected: number;
+}
+
 /**
  * Submit job application with multipart form data
  * Token is handled by axios interceptors (server-side)
@@ -97,6 +103,31 @@ export async function getMyApplications(token: string, page: number = 1, size: n
 }
 
 /**
+ * Get dashboard stats for current talent user
+ * Backend: /api/applications/talent/my-stats GET
+ */
+export async function getMyApplicationStats(token: string): Promise<ApplicationResponse> {
+  try {
+    const response = await axiosInstance.get(
+      API.JOB_APPLICATION.GET_MY_APPLICATION_STATS,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to fetch application stats',
+      error: error.message,
+    };
+  }
+}
+
+/**
  * Get a single application by ID
  * Backend: /api/jobApplication/:id GET
  */
@@ -147,6 +178,31 @@ export async function deleteJobApplication(applicationId: string, token: string)
     return {
       success: false,
       message: error.response?.data?.message || 'Failed to delete application',
+      error: error.message,
+    };
+  }
+}
+
+/**
+ * Get dashboard stats for current employer user
+ * Backend: /api/applications/employer/stats GET
+ */
+export async function getEmployerApplicationStats(token: string): Promise<ApplicationResponse> {
+  try {
+    const response = await axiosInstance.get(
+      '/api/applications/employer/stats',
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to fetch application stats',
       error: error.message,
     };
   }

@@ -83,7 +83,7 @@ export default function SavedJobsManagement() {
       // Refresh the list
       fetchSavedJobs(state.currentPage);
     } else {
-      toast.error(result.error || "Failed to remove job");
+      toast.error("Failed to remove job");
       setState((prev) => ({ ...prev, isDeleting: false }));
     }
   };
@@ -167,9 +167,7 @@ export default function SavedJobsManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-            Saved Jobs
-          </h2>
+          
           <p className="mt-1 text-slate-600 dark:text-slate-400">
             {state.total} job{state.total !== 1 ? "s" : ""} saved
           </p>
@@ -196,9 +194,7 @@ export default function SavedJobsManagement() {
               <th className="px-6 py-3 text-left font-semibold text-slate-900 dark:text-white">
                 Level
               </th>
-              <th className="px-6 py-3 text-left font-semibold text-slate-900 dark:text-white">
-                Saved
-              </th>
+           
               <th className="px-6 py-3 text-center font-semibold text-slate-900 dark:text-white">
                 Actions
               </th>
@@ -231,7 +227,7 @@ export default function SavedJobsManagement() {
                 <td className="px-6 py-4">
                   <div className="flex justify-center gap-2">
                     <Link
-                      href={`/newjob/details?jobId=${job._id}`}
+                      href={`/jobs/details/${job._id}`}
                       className="inline-flex items-center justify-center rounded-lg bg-blue-100 p-2 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors"
                       title="View job details"
                     >

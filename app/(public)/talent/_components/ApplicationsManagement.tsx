@@ -38,9 +38,9 @@ export default function ApplicationsManagement() {
 
       if (response.success && response.data) {
         setApplications(Array.isArray(response.data) ? response.data : [])
-        setCurrentPage(response.page || page)
-        setTotalPages(response.totalPages || 1)
-        setTotalApplications(response.total || 0)
+        setCurrentPage(page)
+        setTotalPages(Math.ceil((Array.isArray(response.data) ? response.data.length : 0) / PAGE_SIZE) || 1)
+        setTotalApplications(Array.isArray(response.data) ? response.data.length : 0)
       } else {
         setError(response.message || 'Failed to fetch applications')
         setApplications([])
@@ -111,7 +111,7 @@ export default function ApplicationsManagement() {
       toast.error('Resume not available')
       return
     }
-    const resumeUrl = `${BACKEND_URL}/profile_pictures/${resumePath}`
+    const resumeUrl = `${BACKEND_URL}/resumes/${resumePath}`
     window.open(resumeUrl, '_blank')
   }
 
@@ -182,19 +182,19 @@ export default function ApplicationsManagement() {
     )
   }
 
-  if (error) {
-    return (
-      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
-        <p className="text-red-700 dark:text-red-200 mb-4">{error}</p>
-        <button
-          onClick={fetchApplications}
-          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-        >
-          Try Again
-        </button>
-      </div>
-    )
-  }
+if (error) {
+  return (
+    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 text-center">
+      <p className="text-red-700 dark:text-red-200 mb-4">{error}</p>
+      <button
+        onClick={() => fetchApplications(currentPage)}
+        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+      >
+        Try Again
+      </button>
+    </div>
+  )
+}
 
   if (applications.length === 0) {
     return (
@@ -219,21 +219,19 @@ export default function ApplicationsManagement() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-[#0d141b] dark:text-white">My Applications</h2>
           <p className="text-[#617589] dark:text-gray-400 mt-1">
             You have submitted <span className="font-semibold text-[#0d141b] dark:text-white">{totalApplications}</span> application{totalApplications !== 1 ? 's' : ''}
-            {totalPages > 0 && (
-              <span className="ml-2">- Page {currentPage} of {totalPages}</span>
-            )}
+          
           </p>
         </div>
-        <button
-          onClick={() => fetchApplications(currentPage)}
-          className="px-4 py-2 text-sm font-medium text-[#111418] dark:text-white border border-[#d0d8e0] dark:border-slate-700 rounded-lg hover:bg-[#f6f7f8] dark:hover:bg-slate-700 transition-colors"
-        >
-          <span className="material-symbols-outlined inline text-lg mr-2">refresh</span>
-          Refresh
-        </button>
+       <button
+  onClick={() => fetchApplications(currentPage)}
+  className="px-4 py-2 text-sm font-medium text-[#111418] dark:text-white border border-[#d0d8e0] dark:border-slate-700 rounded-lg hover:bg-[#f6f7f8] dark:hover:bg-slate-700 transition-colors flex items-center"
+>
+  <span className="material-symbols-outlined text-lg mr-2 flex-shrink-0">refresh</span>
+  Refresh
+</button>
+
       </div>
 
       {/* Table - Desktop */}
