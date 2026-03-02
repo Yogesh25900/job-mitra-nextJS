@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Loader, Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import AdminSideBar from '../../_components/AdminSideBar';
 import { handleCreateUserAsAdmin } from '@/lib/actions/admin/admin-actions';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'react-hot-toast';
@@ -107,11 +106,8 @@ export default function CreateUserPage() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-slate-900">
-      <AdminSideBar />
-
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-white dark:bg-slate-800">
+    <div className="min-h-full bg-gray-50 dark:bg-slate-900">
+      <main className="flex flex-col min-w-0 overflow-hidden bg-white dark:bg-slate-800">
         {/* Header */}
         <header className="h-16 flex items-center px-8 border-b border-gray-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50 backdrop-blur-md sticky top-0 z-10">
           <div className="flex items-center gap-4">
@@ -164,7 +160,7 @@ export default function CreateUserPage() {
                     value={formData.name}
                     onChange={handleChange}
                     placeholder="John Doe"
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
+                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
                       errors.name ? 'border-red-500' : 'border-gray-200'
                     }`}
                   />
@@ -184,7 +180,7 @@ export default function CreateUserPage() {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="john@example.com"
-                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
+                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
                       errors.email ? 'border-red-500' : 'border-gray-200'
                     }`}
                   />
@@ -202,7 +198,7 @@ export default function CreateUserPage() {
                     name="role"
                     value={formData.role}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white transition-colors"
+                    className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white transition-colors"
                   >
                     <option value="user">User (Candidate/Employer)</option>
                     <option value="admin">Admin</option>
@@ -221,7 +217,7 @@ export default function CreateUserPage() {
                       value={formData.password}
                       onChange={handleChange}
                       placeholder="••••••••"
-                      className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
+                      className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
                         errors.password ? 'border-red-500' : 'border-gray-200'
                       }`}
                     />
@@ -250,7 +246,7 @@ export default function CreateUserPage() {
                       value={formData.confirmPassword}
                       onChange={handleChange}
                       placeholder="••••••••"
-                      className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
+                      className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
                         errors.confirmPassword ? 'border-red-500' : 'border-gray-200'
                       }`}
                     />
@@ -275,7 +271,7 @@ export default function CreateUserPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="flex-1 px-4 py-2.5 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="flex-1 px-4 py-2.5 bg-primary text-white rounded-lg font-bold hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {loading ? <Loader className="w-5 h-5 animate-spin" /> : null}
                     {loading ? 'Creating...' : 'Create User'}

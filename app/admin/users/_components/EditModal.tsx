@@ -298,7 +298,7 @@ export default function EditModal({ userId, isOpen, onClose, onSuccess }: EditMo
                   value={formData.companyName || ''}
                   onChange={handleChange}
                   placeholder="Company Name"
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${errors.companyName ? 'border-red-500' : 'border-gray-200'
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${errors.companyName ? 'border-red-500' : 'border-gray-200'
                     }`}
                 />
                 {errors.companyName && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.companyName}</p>}
@@ -313,7 +313,7 @@ export default function EditModal({ userId, isOpen, onClose, onSuccess }: EditMo
                   value={formData.contactName || ''}
                   onChange={handleChange}
                   placeholder="Contact Person Name"
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${errors.contactName ? 'border-red-500' : 'border-gray-200'
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${errors.contactName ? 'border-red-500' : 'border-gray-200'
                     }`}
                 />
                 {errors.contactName && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.contactName}</p>}
@@ -328,7 +328,7 @@ export default function EditModal({ userId, isOpen, onClose, onSuccess }: EditMo
                   value={formData.phoneNumber || ''}
                   onChange={handleChange}
                   placeholder="Phone Number"
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${errors.phoneNumber ? 'border-red-500' : 'border-gray-200'
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${errors.phoneNumber ? 'border-red-500' : 'border-gray-200'
                     }`}
                 />
                 {errors.phoneNumber && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.phoneNumber}</p>}
@@ -345,7 +345,7 @@ export default function EditModal({ userId, isOpen, onClose, onSuccess }: EditMo
                   value={formData.fname || ''}
                   onChange={handleChange}
                   placeholder="First Name"
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${errors.fname ? 'border-red-500' : 'border-gray-200'
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${errors.fname ? 'border-red-500' : 'border-gray-200'
                     }`}
                 />
                 {errors.fname && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.fname}</p>}
@@ -360,7 +360,7 @@ export default function EditModal({ userId, isOpen, onClose, onSuccess }: EditMo
                   value={formData.lname || ''}
                   onChange={handleChange}
                   placeholder="Last Name"
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${errors.lname ? 'border-red-500' : 'border-gray-200'
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${errors.lname ? 'border-red-500' : 'border-gray-200'
                     }`}
                 />
                 {errors.lname && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.lname}</p>}
@@ -377,7 +377,7 @@ export default function EditModal({ userId, isOpen, onClose, onSuccess }: EditMo
               value={formData.email}
               onChange={handleChange}
               placeholder="john@example.com"
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${errors.email ? 'border-red-500' : 'border-gray-200'
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${errors.email ? 'border-red-500' : 'border-gray-200'
                 }`}
             />
             {errors.email && <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.email}</p>}
@@ -390,7 +390,7 @@ export default function EditModal({ userId, isOpen, onClose, onSuccess }: EditMo
               name="userRole"
               value={formData.userRole}
               onChange={handleChange}
-              className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white transition-colors"
+              className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white transition-colors"
             >
               <option value="candidate">Candidate</option>
               <option value="employer">Employer</option>
@@ -404,7 +404,7 @@ export default function EditModal({ userId, isOpen, onClose, onSuccess }: EditMo
               name="role"
               value={formData.role}
               onChange={handleChange}
-              className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white transition-colors"
+              className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white transition-colors"
             >
               <option value="user">User</option>
               <option value="admin">Admin</option>
@@ -424,7 +424,7 @@ export default function EditModal({ userId, isOpen, onClose, onSuccess }: EditMo
                   value={formData.password || ''}
                   onChange={handleChange}
                   placeholder="Leave blank to keep current password"
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${errors.password ? 'border-red-500' : 'border-gray-200'
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${errors.password ? 'border-red-500' : 'border-gray-200'
                     }`}
                 />
                 <button

@@ -92,7 +92,7 @@ export default function AdminLoginForm() {
             type="email"
             placeholder="admin@example.com"
             {...form.register("email")}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white transition-colors"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:text-white transition-colors"
           />
           {form.formState.errors.email && (
             <p className="mt-1 text-sm text-red-600 dark:text-red-400">
@@ -111,7 +111,7 @@ export default function AdminLoginForm() {
               type={showPassword ? "text" : "password"}
               placeholder="••••••••"
               {...form.register("password")}
-              className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white transition-colors"
+              className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-700 dark:text-white transition-colors"
             />
             <button
               type="button"

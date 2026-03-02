@@ -14,15 +14,18 @@ import {
   type LoginTalentInput,
   type LoginRecruiterInput,
 } from "@/app/(auth)/schema"
-import { handleTalentLogin, handleRecruiterLogin } from "@/lib/actions/auth-action"
+import { handleTalentLogin, handleRecruiterLogin, handleTalentGoogleLogin, handleRecruiterGoogleLogin } from "@/lib/actions/auth-action"
 import { useAuth } from "@/context/AuthContext"
 
 type UserType = "Talent" | "Recruiter"
 
-export default function LoginForm() {
+interface LoginFormProps {
+  role: UserType
+}
+
+export default function LoginForm({ role }: LoginFormProps) {
   const router = useRouter()
   const { checkAuth } = useAuth()
-  const [userType, setUserType] = useState<UserType>("Talent")
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -43,38 +46,44 @@ export default function LoginForm() {
     },
   })
 
-  // Select active form based on user type
-  const activeForm = userType === "Talent" ? talentForm : recruiterForm
+  // Select active form based on route role
+  const activeForm = role === "Talent" ? talentForm : recruiterForm
 
   const onSubmit = async (data: LoginTalentInput | LoginRecruiterInput) => {
     setIsLoading(true)
     try {
       let response;
       
-      if (userType === "Talent") {
+      if (role === "Talent") {
         const talentData = data as LoginTalentInput;
         response = await handleTalentLogin(talentData)
-        console.log('Talent login response:', response);
       } else {
         const recruiterData = data as LoginRecruiterInput;
         response = await handleRecruiterLogin(recruiterData)
-        console.log('Recruiter login response:', response);
       }
       
       // Check if response indicates success
       if (response && response.success) {
         toast.success(response.message || "Login successful!")
         await checkAuth()
+        
         // Redirect based on user role
-        router.push("/")
+        const userData = response.data?.data;
+        const userRole = userData?.role;
+        
+        if (userRole === 'candidate') {
+          router.push("/talent")
+        } else if (userRole === 'employer') {
+          router.push("/employer")
+        } else {
+          router.push("/")
+        }
         router.refresh()
       } else {
         // Handle failed response
         toast.error(response?.message || "Login failed. Please try again.")
-        console.error("Login failed:", response)
       }
     } catch (error: any) {
-      console.error("Login error:", error)
       toast.error(error.message || "Login failed. Please try again.")
     } finally {
       setIsLoading(false)
@@ -88,45 +97,47 @@ export default function LoginForm() {
     }
 
     setIsLoading(true)
+    try {
+      const result = role === "Talent"
+        ? await handleTalentGoogleLogin(response.credential)
+        : await handleRecruiterGoogleLogin(response.credential)
+
+      if (result?.success) {
+        toast.success(result.message || "Google login successful!")
+        await checkAuth()
+        router.push(role === "Talent" ? "/talent" : "/employer")
+        router.refresh()
+      } else {
+        toast.error(result?.message || "Google login failed. Please try again.")
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Google login failed. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
  
   }
 
-  const handleUserTypeChange = (type: UserType) => {
-    // Reset both forms when switching
-    talentForm.reset()
-    recruiterForm.reset()
-    setUserType(type)
-    setShowPassword(false)
-  }
+  const isTalent = role === "Talent"
+  const forgotPasswordPath = isTalent ? "/talent/forgot-password" : "/recruiter/forgot-password"
+  const switchLoginPath = isTalent ? "/recruiter/login" : "/talent/login"
+  const switchLoginLabel = isTalent ? "Are you a Recruiter?" : "Are you a Talent User?"
+  const switchLoginAction = isTalent ? "Login as Recruiter" : "Login as Talent"
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gray-100 dark:bg-gray-900">
       <div className="max-w-6xl w-full bg-white dark:bg-gray-800 rounded-2xl shadow-xl flex flex-col md:flex-row">
         {/* Left Side - Images */}
         <div className="hidden md:block md:w-1/2 relative overflow-hidden h-[500px] lg:h-auto">
-          <div
-            className="flex w-[200%] transition-transform duration-700 ease-in-out h-full"
-            style={{
-              transform: userType === "Talent" ? "translateX(0%)" : "translateX(-50%)",
-            }}
-          >
-            {/* Talent Image */}
-            <div className="w-1/2 flex items-center justify-center h-full">
-              <img
-                src="https://img.freepik.com/premium-vector/man-sits-bench-reads-word-lg_1314854-10102.jpg"
-                alt="Talent Illustration"
-                className="w-full h-full object-cover"
-              />
-            </div>
-
-            {/* Recruiter Image */}
-            <div className="w-1/2 flex items-center justify-center h-full">
-              <img
-                src="https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
-                alt="Recruiter Illustration"
-                className="w-full h-full object-cover"
-              />
-            </div>
+          <div className="w-full flex items-center justify-center h-full">
+            <img
+              src={isTalent
+                ? "https://img.freepik.com/premium-vector/man-sits-bench-reads-word-lg_1314854-10102.jpg"
+                : "https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
+              }
+              alt={isTalent ? "Talent Illustration" : "Recruiter Illustration"}
+              className="w-full h-full object-cover"
+            />
           </div>
         </div>
 
@@ -138,24 +149,6 @@ export default function LoginForm() {
           <p className="text-gray-600 dark:text-gray-400 mb-6">
             Sign in to continue
           </p>
-
-          {/* User Type Toggle */}
-          <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1 mb-6">
-            {(["Talent", "Recruiter"] as const).map((type) => (
-              <button
-                key={type}
-                type="button"
-                onClick={() => handleUserTypeChange(type)}
-                className={`flex-1 py-2 px-3 sm:px-4 rounded-md text-xs sm:text-sm font-medium transition-colors ${
-                  userType === type
-                    ? "bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-sm"
-                    : "text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-                }`}
-              >
-                {type}
-              </button>
-            ))}
-          </div>
 
           {/* Login Form */}
           <form
@@ -199,7 +192,7 @@ export default function LoginForm() {
                 </button>
               </div>
               <div className="mt-2 text-right">
-                <Link href="/forgot-password" className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+                <Link href={forgotPasswordPath} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
                   Forgot password?
                 </Link>
               </div>
@@ -242,6 +235,16 @@ export default function LoginForm() {
           </div>
 
           {/* Sign up link */}
+          <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+            {switchLoginLabel}{" "}
+            <Link
+              href={switchLoginPath}
+              className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+            >
+              {switchLoginAction}
+            </Link>
+          </p>
+
           <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
             Don&apos;t have an account?{" "}
             <Link

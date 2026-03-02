@@ -3,18 +3,48 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Activity, BarChart3, DollarSign, FileText, LogOut, Settings, Users, Briefcase, TrendingUp, Search, Bell, HelpCircle, MoreVertical } from 'lucide-react';
-import AdminSideBar from './_components/AdminSideBar';
 import { useAuth } from '@/context/AuthContext';
+import { getDashboardStats, getJobPostingTrends, getRecentActivities } from '@/lib/api/admin/admin';
+import { formatTimeAgo } from '@/lib/utils/timeFormat';
+
+interface DashboardStats {
+  totalUsers: number;
+  activeJobs: number;
+  totalApplications: number;
+  talentCount: number;
+  employerCount: number;
+}
+
+interface JobTrend {
+  _id: string;
+  count: number;
+  categoryName: string;
+}
+
+interface Activity {
+  _id: string;
+  title: string;
+  description: string;
+  type: string;
+  time: string;
+  icon: string;
+  color: string;
+}
 
 export default function AdminDashboard() {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
-  const { user: authUser, isAuthenticated, loading } = useAuth();
+  const { user: authUser, isAuthenticated, loading, token } = useAuth();
   const [shouldRender, setShouldRender] = useState(false);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [trends, setTrends] = useState<JobTrend[]>([]);
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Protect admin route - only check AFTER loading is complete
   useEffect(() => {
-    console.log('[ADMIN PAGE] useEffect - loading:', loading, 'isAuthenticated:', isAuthenticated, 'authUser:', authUser);
+    console.log('[ADMIN PAGE] useEffect 1 triggered - loading:', loading, 'isAuthenticated:', isAuthenticated, 'authUser:', authUser);
     
     if (loading) {
       console.log('[ADMIN PAGE] Still loading auth, waiting...');
@@ -24,6 +54,7 @@ export default function AdminDashboard() {
     console.log('[ADMIN PAGE] Auth loading complete. Checking permissions...');
     console.log('[ADMIN PAGE] isAuthenticated:', isAuthenticated);
     console.log('[ADMIN PAGE] authUser?.role:', authUser?.role);
+    console.log('[ADMIN PAGE] token available:', !!token);
     
     // Only allow if authenticated as admin
     if (!isAuthenticated) {
@@ -39,15 +70,84 @@ export default function AdminDashboard() {
       return;
     }
     
-    console.log('[ADMIN PAGE] User is admin, allowing render');
+    console.log('[ADMIN PAGE] User is admin, allowing render. Setting shouldRender to true');
     setShouldRender(true);
   }, [loading, isAuthenticated, authUser, router]);
+
+  // Fetch dashboard data function (moved outside useEffect for reusability)
+  const fetchDashboardData = React.useCallback(async () => {
+    if (!token) {
+      console.error('[Dashboard] No token available');
+      setError('Authentication token not found. Please log in again.');
+      return;
+    }
+
+    try {
+      setLoadingData(true);
+      setError(null);
+
+      console.log('[Dashboard] Starting data fetch with token:', token?.slice(0, 10) + '...');
+
+      // Fetch stats, trends, and activities in parallel
+      // Request more activities (50) to show historical data
+      const [statsRes, trendsRes, activitiesRes] = await Promise.all([
+        getDashboardStats(token).catch(err => {
+          console.error('[Dashboard] Stats fetch error:', err);
+          return { success: false, data: null };
+        }),
+        getJobPostingTrends(token).catch(err => {
+          console.error('[Dashboard] Trends fetch error:', err);
+          return { success: false, data: [] };
+        }),
+        getRecentActivities(token, 50, 0).catch(err => {
+          console.error('[Dashboard] Activities fetch error:', err);
+          return { success: false, data: [] };
+        }),
+      ]);
+
+      console.log('[Dashboard] Response data:', { statsRes, trendsRes, activitiesRes });
+
+      if (statsRes?.success && statsRes?.data) {
+        console.log('[Dashboard] Setting stats:', statsRes.data);
+        setStats(statsRes.data);
+      } else {
+        console.warn('[Dashboard] Stats response failed:', statsRes);
+      }
+      
+      if (trendsRes?.success) {
+        console.log('[Dashboard] Setting trends:', trendsRes.data);
+        setTrends(trendsRes.data || []);
+      } else {
+        console.warn('[Dashboard] Trends response failed:', trendsRes);
+      }
+      
+      if (activitiesRes?.success) {
+        console.log('[Dashboard] Setting activities:', activitiesRes.data?.length);
+        setActivities(activitiesRes.data || []);
+      } else {
+        console.warn('[Dashboard] Activities response failed:', activitiesRes);
+      }
+    } catch (err: any) {
+      console.error('[Dashboard] Error fetching dashboard data:', err);
+      setError(err.message || 'Failed to load dashboard data');
+    } finally {
+      setLoadingData(false);
+    }
+  }, [token]);
+
+  // Fetch dashboard data when user is authenticated
+  useEffect(() => {
+    if (shouldRender && token) {
+      console.log('[Dashboard] Conditions met, calling fetchDashboardData');
+      fetchDashboardData();
+    }
+  }, [shouldRender, token, fetchDashboardData]);
 
   // Show loading state while checking auth
   if (loading || !shouldRender) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
+      <div className="flex items-center justify-center min-h-screen bg-slate-950">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-violet-600"></div>
       </div>
     );
   }
@@ -55,7 +155,8 @@ export default function AdminDashboard() {
   const metrics = [
     {
       title: 'Total Users',
-      value: '12,450',
+      value: stats?.totalUsers?.toLocaleString() || '0',
+      subtext: `${stats?.talentCount || 0} talents, ${stats?.employerCount || 0} employers`,
       change: '+12%',
       period: 'from last month',
       icon: Users,
@@ -64,7 +165,7 @@ export default function AdminDashboard() {
     },
     {
       title: 'Active Jobs',
-      value: '1,204',
+      value: stats?.activeJobs?.toLocaleString() || '0',
       change: '+5%',
       period: 'from last week',
       icon: Briefcase,
@@ -72,17 +173,8 @@ export default function AdminDashboard() {
       trend: 'up'
     },
     {
-      title: 'Total Revenue',
-      value: '$45,200',
-      change: '+8%',
-      period: 'past 30 days',
-      icon: DollarSign,
-      color: 'emerald',
-      trend: 'up'
-    },
-    {
       title: 'New Applications',
-      value: '856',
+      value: stats?.totalApplications?.toLocaleString() || '0',
       change: '+15%',
       period: 'last 24h',
       icon: FileText,
@@ -91,138 +183,74 @@ export default function AdminDashboard() {
     }
   ];
 
-  const activities = [
-    {
-      title: 'New Talent Joined',
-      description: 'Sarah Miller registered as UI/UX Designer',
-      time: '2 mins ago',
-      icon: Users,
-      color: 'primary'
-    },
-    {
-      title: 'Job Posted',
-      description: 'TechCorp Inc. posted "Senior React Dev"',
-      time: '15 mins ago',
-      icon: Activity,
-      color: 'indigo'
-    },
-    {
-      title: 'Verification Success',
-      description: 'Global Solutions passed KYC verification',
-      time: '1 hour ago',
-      icon: Activity,
-      color: 'emerald'
-    },
-    {
-      title: 'Reported Content',
-      description: 'Job #342 reported for suspicious activity',
-      time: '3 hours ago',
-      icon: Activity,
-      color: 'red'
-    }
-  ];
+  // Calculate trend data for bar chart
+  const chartData = trends.slice(0, 6).map(trend => ({
+    name: trend.categoryName,
+    count: trend.count,
+  }));
+  
+  // Pad with empty data if less than 6 categories
+  while (chartData.length < 6) {
+    chartData.push({ name: '', count: 0 });
+  }
 
-  const users = [
-    {
-      name: 'Emily Blunt',
-      email: 'emily.b@example.com',
-      role: 'Freelancer',
-      roleColor: 'blue',
-      joinedDate: 'Oct 24, 2023',
-      status: 'Active',
-      statusColor: 'emerald',
-      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAiG-LL1uMtDackv481Ev4E4hVRDLuIFJWUij7PJv2dAQkRdGuYyyn5dQWy3oRehEaz1_SwF2TaoY-I-tv32Fwq4sdsqyeNRL1hdnhp5Sq-VFuxqynIFtTEh-ka3RiundB6WzmUDsDeKI1c_62S98WRuY0Gr3kiDuAkBoy2QQA-EDsWdzkPg8NK7hRibf4ncgSsxupQ5EhZDMu6KFpdaLqAxVIaJuty9aCoNoCSjySaNUdnS0prlrikAYz69b1_Qa7kEczhopvi2Qnk'
-    },
-    {
-      name: 'Marcus Thorne',
-      email: 'marcus@techstack.io',
-      role: 'Employer',
-      roleColor: 'purple',
-      joinedDate: 'Oct 23, 2023',
-      status: 'Active',
-      statusColor: 'emerald',
-      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDXk8iZSSfUsytiIt_-0CuyN8oh8KOTLdb4ZTSRDQLife8RAE7WdNkKSld4G7LS5tSW2e5E81sBUIb80cYShgF3BF9xAuBvRxLPeSF0Ws7nX2F4exwT3eexMUXs-Wn9A50vmSicPpQSim74ALdTMcUomrB6lYd3gvDr8xspG5mt5pPxV69PPTfXKTsArEF3efzS5Q0jUon_7UulR5UBtPhFf3Q4kRQLqRcz8VXDjqDkvhixUFVGxfe2Dw0Jhlm3XVQEOKUo7NFfq92q'
-    },
-    {
-      name: 'James Wilson',
-      email: 'james.w@designly.com',
-      role: 'Freelancer',
-      roleColor: 'blue',
-      joinedDate: 'Oct 23, 2023',
-      status: 'Pending',
-      statusColor: 'amber',
-      avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuALJcA68LCTWMAZ0nDuda5lP1YkO3rKAzPpIQk7VKhXpqYSHP74KQX14sVribFRe2TlG_pKdg-dzXoEM6Vhtd7VLjjxGEKPP1o85_EZoFOtM5LIvMQU1fXmqrinVG_3FE62kHl-NuFR63WodRZoDVvSwYO-966Fh5u3eZirAHz67itgGonz_cWfxYXsDEfcm1eJBKVafPti9lMC5uPVsBzqsj4-cKn4kjSQt41R9bpremm2RFccfBCWw2vHyfvN9GU03S7vNd9qAgct'
-    }
-  ];
-
-  const chartBars = [60, 45, 75, 65, 90, 85];
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+  const chartBars = chartData.map(data => {
+    // Normalize bar heights (0-100)
+    const maxCount = Math.max(...chartData.map(d => d.count)) || 1;
+    return (data.count / maxCount) * 100;
+  });
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-slate-950">
-        {/* Sidebar */}
-        <AdminSideBar />
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        {/* Top Navigation */}
-        <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-gray-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-8">
-          <div className="flex items-center gap-4 flex-1">
-            <div className="relative max-w-md w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Search analytics, users, or jobs..."
-                className="w-full bg-gray-100 dark:bg-slate-800 border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-blue-600 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button className="p-2 text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
-            </button>
-            <button className="p-2 text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg">
-              <HelpCircle className="w-5 h-5" />
-            </button>
-            <div className="h-8 w-px bg-gray-200 dark:border-slate-800 mx-2"></div>
-            <div className="flex items-center gap-3">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">{authUser?.email || 'Admin User'}</p>
-                <p className="text-xs text-gray-500 dark:text-blue-300">{authUser?.role || 'Admin'}</p>
-              </div>
-              <div className="h-10 w-10 rounded-full border border-gray-300 dark:border-slate-700 bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
-                {authUser?.email?.charAt(0).toUpperCase() || 'A'}
-              </div>
-            </div>
-          </div>
-        </header>
+      <main className="flex flex-col min-h-full bg-white dark:bg-slate-950 transition-colors duration-200">
+     
 
         {/* Dashboard Content */}
         <div className="p-8 space-y-8">
           {/* Header */}
           <div>
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard Overview</h2>
-            <p className="text-gray-500 dark:text-blue-300 mt-1">Welcome back, Alex. Here's what's happening with JobMitra today.</p>
+            
+            <p className="text-gray-600 dark:text-slate-400 mt-1">Welcome back, {authUser?.email?.split('@')[0] || 'Admin'}. Here's what's happening with JobMitra today.</p>
           </div>
 
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+              <p className="text-red-800 dark:text-red-200 font-semibold">Error Loading Dashboard</p>
+              <p className="text-red-700 dark:text-red-300 text-sm mt-1">{error}</p>
+              <button 
+                onClick={() => fetchDashboardData()}
+                className="mt-2 text-red-600 dark:text-red-400 text-sm font-bold hover:underline"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
           {/* KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {metrics.map((metric, index) => {
               const Icon = metric.icon;
               const colorClasses = {
-                primary: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
-                indigo: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
-                emerald: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
-                amber: 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400'
+                primary: 'bg-blue-900/30 text-blue-400',
+                indigo: 'bg-indigo-900/30 text-indigo-400',
+                emerald: 'bg-emerald-900/30 text-emerald-400',
+                amber: 'bg-amber-900/30 text-amber-400'
               };
 
               return (
-                <div key={index} className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-6 rounded-xl flex flex-col">
+                <div key={index} className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 p-6 rounded-xl flex flex-col transition-colors">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-blue-300">{metric.title}</p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{metric.value}</p>
+                      <p className="text-sm font-medium text-gray-600 dark:text-slate-400">{metric.title}</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                        {loadingData ? (
+                          <span className="inline-block animate-pulse">••••</span>
+                        ) : (
+                          metric.value
+                        )}
+                      </p>
+                      {metric.subtext && !loadingData && <p className="text-xs text-gray-600 dark:text-slate-500 mt-1">{metric.subtext}</p>}
                     </div>
                     <div className={`${colorClasses[metric.color as keyof typeof colorClasses]} p-2 rounded-lg`}>
                       <Icon className="w-6 h-6" />
@@ -232,9 +260,9 @@ export default function AdminDashboard() {
                     <span className="text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center">
                       <TrendingUp className="w-3 h-3 mr-1" /> {metric.change}
                     </span>
-                    <span className="text-gray-400 dark:text-gray-500 text-xs">{metric.period}</span>
+                    <span className="text-gray-600 dark:text-slate-500 text-xs">{metric.period}</span>
                   </div>
-                  <div className="h-16 w-full mt-auto bg-gradient-to-b from-blue-50 to-transparent dark:from-blue-900/20 dark:to-transparent rounded-lg"></div>
+                  <div className="h-16 w-full mt-auto bg-gradient-to-b from-blue-200/20 dark:from-blue-900/20 to-transparent rounded-lg"></div>
                 </div>
               );
             })}
@@ -245,23 +273,29 @@ export default function AdminDashboard() {
             {/* Chart */}
             <div className="xl:col-span-8 space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Job Posting Trends</h3>
-                <select className="bg-white dark:bg-slate-800 border-none text-xs font-semibold rounded-lg px-3 py-1.5 focus:ring-1 focus:ring-blue-600 dark:text-white">
-                  <option>Last 6 Months</option>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Job Posting Trends by Category</h3>
+                <select className="bg-gray-200 dark:bg-slate-800 border border-gray-300 dark:border-slate-700 text-xs font-semibold rounded-lg px-3 py-1.5 focus:ring-1 focus:ring-primary text-gray-900 dark:text-white">
+                  <option>Current Year</option>
                   <option>Last Year</option>
                 </select>
               </div>
               <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl p-8 h-96 flex flex-col">
-                <div className="flex-1 flex items-end justify-between gap-4 px-4 pb-2">
-                  {chartBars.map((height, index) => (
-                    <div key={index} className="flex flex-col items-center flex-1 gap-2">
-                      <div className="w-full bg-gray-100 dark:bg-slate-800 rounded-t-lg relative h-48 overflow-hidden">
-                        <div className={`absolute bottom-0 left-0 right-0 bg-blue-600/40 dark:bg-blue-600/40 rounded-t-lg transition-all hover:bg-blue-600 dark:hover:bg-blue-500`} style={{ height: `${height}%` }}></div>
+                {loadingData ? (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-violet-600"></div>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex items-end justify-between gap-4 px-4 pb-2">
+                    {chartBars.map((height, index) => (
+                      <div key={index} className="flex flex-col items-center flex-1 gap-2">
+                        <div className="w-full bg-gray-200 dark:bg-slate-800 rounded-t-lg relative h-48 overflow-hidden">
+                          <div className={`absolute bottom-0 left-0 right-0 bg-blue-600/40 rounded-t-lg transition-all hover:bg-blue-500`} style={{ height: `${Math.max(height || 0, 5)}%` }}></div>
+                        </div>
+                        <span className="text-xs font-medium text-gray-600 dark:text-slate-400 text-center truncate w-full px-1">{chartData[index].name || `Cat ${index + 1}`}</span>
                       </div>
-                      <span className="text-xs font-medium text-gray-400">{months[index]}</span>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -269,107 +303,67 @@ export default function AdminDashboard() {
             <div className="xl:col-span-4 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">Recent Activities</h3>
-                <button className="text-blue-600 dark:text-blue-400 text-xs font-bold hover:underline">View All</button>
+                <button className="text-primary dark:text-blue-400 text-xs font-bold hover:underline">View All</button>
               </div>
               <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl overflow-hidden">
-                <div className="divide-y divide-gray-100 dark:divide-slate-800">
-                  {activities.map((activity, index) => {
-                    const Icon = activity.icon;
-                    const colorClasses = {
-                      primary: 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
-                      indigo: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
-                      emerald: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400',
-                      red: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
-                    };
+                <div className="divide-y divide-gray-200 dark:divide-slate-800 max-h-96 overflow-y-auto">
+                  {loadingData ? (
+                    <div className="p-4 flex items-center justify-center h-64">
+                      <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-violet-600"></div>
+                    </div>
+                  ) : activities.length === 0 ? (
+                    <div className="p-4 text-center text-slate-500">
+                      No activities found
+                    </div>
+                  ) : (
+                    activities.length > 0 && activities.map((activity) => {
+                      const colorClasses = {
+                        primary: 'bg-blue-900/30 text-blue-400',
+                        indigo: 'bg-indigo-900/30 text-indigo-400',
+                        emerald: 'bg-emerald-900/30 text-emerald-400',
+                        amber: 'bg-amber-900/30 text-amber-400',
+                        red: 'bg-red-900/30 text-red-400'
+                      };
 
-                    return (
-                      <div key={index} className="p-4 flex items-start gap-4 hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors">
-                        <div className={`${colorClasses[activity.color as keyof typeof colorClasses]} h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0`}>
-                          <Icon className="w-5 h-5" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{activity.title}</p>
-                          <p className="text-xs text-gray-500 dark:text-blue-300">{activity.description}</p>
-                          <p className="text-[10px] text-gray-400 mt-1">{activity.time}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
+                      const getIcon = (type: string) => {
+                        switch(type) {
+                          case 'job_posted': return Briefcase;
+                          case 'talent_joined': return Users;
+                          case 'application_submitted': return FileText;
+                          case 'user_verified': return Activity;
+                          case 'content_reported': return Activity;
+                          case 'job': return Briefcase;
+                          case 'application': return FileText;
+                          default: return Activity;
+                        }
+                      }
 
-          {/* Users Table */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">New User Registrations</h3>
-              <div className="flex gap-2">
-                <button className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-800 text-xs font-bold rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
-                  Export CSV
-                </button>
-                <button className="px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-colors">
-                  Add New User
-                </button>
-              </div>
-            </div>
-            <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-blue-300 text-[11px] uppercase tracking-wider font-bold border-b border-gray-200 dark:border-slate-800">
-                    <th className="px-6 py-4">User</th>
-                    <th className="px-6 py-4">Role</th>
-                    <th className="px-6 py-4">Joined Date</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
-                  {users.map((user, index) => (
-                    <tr key={index} className="hover:bg-gray-50 dark:hover:bg-slate-800/20 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={user.avatar}
-                            alt={user.name}
-                            className="h-8 w-8 rounded-full border border-gray-200 dark:border-slate-800"
-                          />
-                          <div>
-                            <p className="text-sm font-semibold text-gray-900 dark:text-white">{user.name}</p>
-                            <p className="text-xs text-gray-500 dark:text-blue-300">{user.email}</p>
+                      const Icon = getIcon(activity.type);
+
+                      return (
+                        <div key={activity._id} className="p-4 flex items-start gap-4 hover:bg-gray-100 dark:hover:bg-slate-800/30 transition-colors">
+                          <div className={`${colorClasses[activity.color as keyof typeof colorClasses]} h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0`}>
+                            <Icon className="w-5 h-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{activity.title}</p>
+                            <p className="text-xs text-gray-600 dark:text-slate-400 line-clamp-2">{activity.description}</p>
+                            <p className="text-[10px] text-gray-600 dark:text-slate-500 mt-1">{formatTimeAgo(new Date(activity.time))}</p>
                           </div>
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`text-xs font-medium px-2 py-1 bg-${user.roleColor}-100 dark:bg-${user.roleColor}-900/30 text-${user.roleColor}-600 dark:text-${user.roleColor}-400 rounded-lg`}>
-                          {user.role}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-700 dark:text-gray-300">{user.joinedDate}</td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium bg-${user.statusColor}-100 dark:bg-${user.statusColor}-900/30 text-${user.statusColor}-600 dark:text-${user.statusColor}-400`}>
-                          <span className={`w-1.5 h-1.5 rounded-full bg-${user.statusColor}-500`}></span>
-                          {user.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                          <MoreVertical className="w-5 h-5" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Footer */}
         <footer className="mt-auto p-8 border-t border-gray-200 dark:border-slate-800 text-center">
-          <p className="text-xs text-gray-400 dark:text-blue-300">© 2023 JobMitra Platform. All rights reserved. Version 2.4.0-build.88</p>
+          <p className="text-xs text-gray-600 dark:text-slate-400">© 2024 JobMitra Platform. All rights reserved. Version 2.4.0-build.88</p>
         </footer>
       </main>
-    </div>
   );
 }

@@ -23,9 +23,9 @@ export default function LogoutConfirmModal({
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9998] animate-in fade-in duration-200" />
 
       {/* Modal container */}
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 min-h-screen">
         <div
-          className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full transform animate-in zoom-in-95 duration-200"
+          className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full transform animate-in zoom-in-95 duration-200 my-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}

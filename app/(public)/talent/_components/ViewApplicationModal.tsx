@@ -47,9 +47,13 @@ export default function ViewApplicationModal({ application, isOpen, onClose }: V
     })
   }
 
-  const handleDownload = (filePath?: string, fileName: string = 'document') => {
+  const handleDownload = (
+    filePath: string | undefined,
+    fileName: string = 'document',
+    folder: 'resumes' | 'cover_letters' = 'resumes'
+  ) => {
     if (!filePath) return
-    const fileUrl = `${BACKEND_URL}/profile_pictures/${filePath}`
+    const fileUrl = `${BACKEND_URL}/${folder}/${filePath}`
     const link = document.createElement('a')
     link.href = fileUrl
     link.download = fileName
@@ -210,7 +214,7 @@ export default function ViewApplicationModal({ application, isOpen, onClose }: V
             <div className="space-y-3">
               {/* Resume */}
               <button
-                onClick={() => handleDownload(application.resumePath, 'resume.pdf')}
+                onClick={() => handleDownload(application.resumePath, 'resume.pdf', 'resumes')}
                 className="w-full flex items-center justify-between p-3 bg-[#f6f7f8] dark:bg-slate-700/50 hover:bg-[#e0e4e8] dark:hover:bg-slate-700 rounded-lg transition-colors"
               >
                 <div className="flex items-center gap-3">
@@ -226,7 +230,7 @@ export default function ViewApplicationModal({ application, isOpen, onClose }: V
               {/* Cover Letter */}
               {application.coverLetterPath && (
                 <button
-                  onClick={() => handleDownload(application.coverLetterPath, 'cover-letter.pdf')}
+                  onClick={() => handleDownload(application.coverLetterPath, 'cover-letter.pdf', 'cover_letters')}
                   className="w-full flex items-center justify-between p-3 bg-[#f6f7f8] dark:bg-slate-700/50 hover:bg-[#e0e4e8] dark:hover:bg-slate-700 rounded-lg transition-colors"
                 >
                   <div className="flex items-center gap-3">

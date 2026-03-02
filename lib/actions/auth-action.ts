@@ -1,5 +1,5 @@
 "use server";
-import { loginTalent, loginRecruiter, registerRecruiter, registerTalent, getTalentProfileById, getTalentProfileMe, talentProfileEdit, uploadTalentProfilePhoto,  } from "@/lib/api/auth"
+import { loginTalent, loginRecruiter, registerRecruiter, registerTalent, getTalentProfileById, getTalentProfileMe, talentProfileEdit, uploadTalentProfilePhoto, getRecruiterProfileById, recruiterProfileEdit, googleLoginTalent, googleLoginRecruiter } from "@/lib/api/auth"
 import {  LoginTalentInput, LoginRecruiterInput, SignupRecruiterInput, SignupTalentInput } from "@/app/(auth)/schema"
 import { setAuthToken, setUserData, clearAuthCookies, getUserData, getAuthToken } from "../cookie"
 import { redirect } from "next/navigation";
@@ -53,6 +53,34 @@ export const handleTalentLogin = async (data: LoginTalentInput) => {
         return { 
             success: false, 
             message: error.message || 'Login action failed' 
+        }
+    }
+}
+
+export const handleTalentGoogleLogin = async (credential: string) => {
+    try {
+        const response = await googleLoginTalent(credential)
+        console.log('handleTalentGoogleLogin response:', response)
+
+        if (response.success) {
+            await setAuthToken(response.token)
+            await setUserData(response.data)
+            return {
+                success: true,
+                message: response.message || 'Google login successful',
+                data: response
+            }
+        }
+
+        return {
+            success: false,
+            message: response.message || 'Google login failed'
+        }
+    } catch (error: any) {
+        console.error('handleTalentGoogleLogin error:', error)
+        return {
+            success: false,
+            message: error.message || 'Google login action failed'
         }
     }
 }
@@ -129,6 +157,34 @@ export const handleRecruiterLogin = async (data: LoginRecruiterInput) => {
     }
 }
 
+export const handleRecruiterGoogleLogin = async (credential: string) => {
+    try {
+        const response = await googleLoginRecruiter(credential)
+        console.log('handleRecruiterGoogleLogin response:', response)
+
+        if (response.success) {
+            await setAuthToken(response.token)
+            await setUserData(response.data)
+            return {
+                success: true,
+                message: response.message || 'Google login successful',
+                data: response
+            }
+        }
+
+        return {
+            success: false,
+            message: response.message || 'Google login failed'
+        }
+    } catch (error: any) {
+        console.error('handleRecruiterGoogleLogin error:', error)
+        return {
+            success: false,
+            message: error.message || 'Google login action failed'
+        }
+    }
+}
+
 export const handleLogout = async () => {
     await clearAuthCookies();
     revalidatePath('/', 'layout');
@@ -145,19 +201,22 @@ export const handleCheckAuth = async () => {
         if (!userData || !token) {
             return {
                 authenticated: false,
-                user: null
+                user: null,
+                token: null
             };
         }
         
         return {
             authenticated: true,
-            user: userData
+            user: userData,
+            token: token
         };
     } catch (error: any) {
         console.error('handleCheckAuth error:', error);
         return {
             authenticated: false,
-            user: null
+            user: null,
+            token: null
         };
     }
 }
@@ -186,9 +245,9 @@ export const handleGetTalentProfileById = async () => {
         const token = await getAuthToken();
         if (!token) throw new Error('Unauthorized');
         
-        console.log('🔍 [ACTION] handleGetTalentProfileById - Fetching current user profile');
+        console.log(' [ACTION] handleGetTalentProfileById - Fetching current user profile');
         const userData = await getTalentProfileMe(token);
-        console.log('✅ handleGetTalentProfileById userData:', userData);
+        console.log('handleGetTalentProfileById userData:', userData);
         
         // getTalentProfileMe returns the user object directly (not wrapped in success/data)
         if (userData) {
@@ -203,7 +262,7 @@ export const handleGetTalentProfileById = async () => {
             message: 'No user data received'
         }
     } catch (error: any) {
-        console.error('❌ handleGetTalentProfileById error:', error?.response?.status, error?.message);
+        console.error(' handleGetTalentProfileById error:', error?.response?.status, error?.message);
         return { 
             success: false, 
             message: error.message || 'Fetch action failed' 
@@ -244,7 +303,7 @@ export const handleTalentProfileUpdate = async (formData: FormData) => {
 export const handleUploadTalentProfilePhoto = async (formData: FormData) => {
     try {
         const token = await getAuthToken();
-        console.log('🚀 handleUploadTalentProfilePhoto token:', token);
+        console.log(' handleUploadTalentProfilePhoto token:', token);
         if (!token) throw new Error('Unauthorized');
         const response = await uploadTalentProfilePhoto(formData, token);
         console.log('handleUploadTalentProfilePhoto response:', response);
@@ -265,5 +324,65 @@ export const handleUploadTalentProfilePhoto = async (formData: FormData) => {
             success: false, 
             message: error.message || 'Photo upload action failed' 
         }
+    }
+}
+
+export const handleGetRecruiterProfileById = async () => {
+    try {
+        const token = await getAuthToken();
+        const userData = await getUserData();
+        const id = userData?.id || userData?._id;
+        if (!id) throw new Error('User ID not found');
+
+        const response = await getRecruiterProfileById(id, token || undefined);
+        if (response?.data) {
+            return {
+                success: true,
+                message: 'Fetch successful',
+                data: response.data,
+            };
+        }
+
+        return {
+            success: false,
+            message: response?.message || 'No user data received',
+        };
+    } catch (error: any) {
+        console.error('handleGetRecruiterProfileById error:', error?.response?.status, error?.message);
+        return {
+            success: false,
+            message: error.message || 'Fetch action failed',
+        };
+    }
+}
+
+export const handleRecruiterProfileUpdate = async (formData: FormData) => {
+    try {
+        const token = await getAuthToken();
+        const user = await getUserData();
+        const id = user?.id || user?._id;
+        if (!token) throw new Error('Unauthorized');
+        if (!id) throw new Error('User ID not found');
+
+        const response = await recruiterProfileEdit(formData, token, id);
+        if (response.success) {
+            await setUserData(response.data);
+            return {
+                success: true,
+                message: 'Profile update successful',
+                data: response.data,
+            };
+        }
+
+        return {
+            success: false,
+            message: response.message || 'Profile update failed',
+        };
+    } catch (error: any) {
+        console.error('handleRecruiterProfileUpdate error:', error);
+        return {
+            success: false,
+            message: error.message || 'Profile update action failed',
+        };
     }
 }

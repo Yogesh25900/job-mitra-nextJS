@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { Loader, Eye, EyeOff, X, Upload } from 'lucide-react';
 import { handleCreateUserAsAdmin } from '@/lib/actions/admin/admin-actions';
 import { toast } from 'react-hot-toast';
-import { buildImageUrl } from '@/lib/utils/imageUrl';
 
 interface CreateModalProps {
   isOpen: boolean;
@@ -28,14 +27,16 @@ export default function CreateModal({ isOpen, onClose, onSuccess }: CreateModalP
     companyName: '',
     contactName: '',
     phoneNumber: '',
-    role: 'user',
+    dateOfBirth: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const isEmployer = formData.userType === 'employer';
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (formData.userType === 'employer') {
+    if (isEmployer) {
       if (!formData.companyName?.trim()) {
         newErrors.companyName = 'Company name is required';
       }
@@ -57,10 +58,20 @@ export default function CreateModal({ isOpen, onClose, onSuccess }: CreateModalP
       newErrors.email = 'Invalid email format';
     }
 
+    if (!formData.phoneNumber.trim()) {
+      newErrors.phoneNumber = 'Phone number is required';
+    } else if (!/^\d{10}$/.test(formData.phoneNumber.trim())) {
+      newErrors.phoneNumber = 'Phone number must be exactly 10 digits';
+    }
+
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
+    }
+
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = 'Confirm password is required';
     }
 
     if (formData.password !== formData.confirmPassword) {
@@ -73,6 +84,21 @@ export default function CreateModal({ isOpen, onClose, onSuccess }: CreateModalP
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+
+    if (name === 'userType') {
+      setFormData((prev) => ({
+        ...prev,
+        userType: value,
+        fname: value === 'employer' ? '' : prev.fname,
+        lname: value === 'employer' ? '' : prev.lname,
+        dateOfBirth: value === 'employer' ? '' : prev.dateOfBirth,
+        companyName: value === 'talent' ? '' : prev.companyName,
+        contactName: value === 'talent' ? '' : prev.contactName,
+      }));
+      setErrors({});
+      return;
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -108,7 +134,24 @@ export default function CreateModal({ isOpen, onClose, onSuccess }: CreateModalP
 
     try {
       setLoading(true);
-      const { confirmPassword, ...userData } = formData;
+      
+      // Build data object with only required fields (excluding userType and confirmPassword)
+      let dataToSubmit: any = {
+        email: formData.email,
+        password: formData.password,
+        phoneNumber: formData.phoneNumber,
+        role: formData.userType === 'talent' ? 'candidate' : 'employer',
+      };
+
+      // Add role-specific fields
+      if (formData.userType === 'talent') {
+        dataToSubmit.fname = formData.fname;
+        dataToSubmit.lname = formData.lname;
+        dataToSubmit.dateOfBirth = formData.dateOfBirth;
+      } else {
+        dataToSubmit.companyName = formData.companyName;
+        dataToSubmit.contactName = formData.contactName;
+      }
 
       // If there's a profile picture, convert to base64
       if (profilePicture) {
@@ -116,7 +159,7 @@ export default function CreateModal({ isOpen, onClose, onSuccess }: CreateModalP
         reader.onload = async () => {
           const base64 = reader.result as string;
           const userDataWithImage = {
-            ...userData,
+            ...dataToSubmit,
             profilePictureBase64: base64,
             profilePictureName: profilePicture.name,
           };
@@ -135,7 +178,7 @@ export default function CreateModal({ isOpen, onClose, onSuccess }: CreateModalP
         };
         reader.readAsDataURL(profilePicture);
       } else {
-        const response = await handleCreateUserAsAdmin(userData as any);
+        const response = await handleCreateUserAsAdmin(dataToSubmit as any);
 
         if (response.success) {
           toast.success('User created successfully!');
@@ -210,15 +253,15 @@ export default function CreateModal({ isOpen, onClose, onSuccess }: CreateModalP
               name="userType"
               value={formData.userType}
               onChange={handleChange}
-              className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white transition-colors"
+              className="w-full px-4 py-2.5 border border-slate-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-slate-700 text-gray-900 dark:text-white transition-colors"
             >
-              <option value="talent">Talent</option>
-              <option value="employer">Employer</option>
+              <option value="talent">Candidate</option>
+              <option value="employer">Employer / Recruiter</option>
             </select>
           </div>
 
           {/* Role-specific Name Fields */}
-          {formData.userType === 'employer' ? (
+          {isEmployer ? (
             <>
               {/* Company Name Field */}
               <div>
@@ -229,7 +272,7 @@ export default function CreateModal({ isOpen, onClose, onSuccess }: CreateModalP
                   value={formData.companyName}
                   onChange={handleChange}
                   placeholder="Company Name"
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
                     errors.companyName ? 'border-red-500' : 'border-gray-200'
                   }`}
                 />
@@ -247,7 +290,7 @@ export default function CreateModal({ isOpen, onClose, onSuccess }: CreateModalP
                   value={formData.contactName}
                   onChange={handleChange}
                   placeholder="Contact Person Name"
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
                     errors.contactName ? 'border-red-500' : 'border-gray-200'
                   }`}
                 />
@@ -264,8 +307,9 @@ export default function CreateModal({ isOpen, onClose, onSuccess }: CreateModalP
                   name="phoneNumber"
                   value={formData.phoneNumber}
                   onChange={handleChange}
-                  placeholder="Phone Number"
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
+                  placeholder="10-digit Phone Number"
+                  maxLength={10}
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
                     errors.phoneNumber ? 'border-red-500' : 'border-gray-200'
                   }`}
                 />
@@ -285,7 +329,7 @@ export default function CreateModal({ isOpen, onClose, onSuccess }: CreateModalP
                   value={formData.fname}
                   onChange={handleChange}
                   placeholder="First Name"
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
                     errors.fname ? 'border-red-500' : 'border-gray-200'
                   }`}
                 />
@@ -303,12 +347,31 @@ export default function CreateModal({ isOpen, onClose, onSuccess }: CreateModalP
                   value={formData.lname}
                   onChange={handleChange}
                   placeholder="Last Name"
-                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
                     errors.lname ? 'border-red-500' : 'border-gray-200'
                   }`}
                 />
                 {errors.lname && (
                   <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.lname}</p>
+                )}
+              </div>
+
+              {/* Phone Number Field */}
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-white mb-2">Phone Number</label>
+                <input
+                  type="text"
+                  name="phoneNumber"
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
+                  placeholder="10-digit Phone Number"
+                  maxLength={10}
+                  className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
+                    errors.phoneNumber ? 'border-red-500' : 'border-gray-200'
+                  }`}
+                />
+                {errors.phoneNumber && (
+                  <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.phoneNumber}</p>
                 )}
               </div>
             </>
@@ -323,7 +386,7 @@ export default function CreateModal({ isOpen, onClose, onSuccess }: CreateModalP
               value={formData.email}
               onChange={handleChange}
               placeholder="john@example.com"
-              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
+              className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
                 errors.email ? 'border-red-500' : 'border-gray-200'
               }`}
             />
@@ -340,7 +403,7 @@ export default function CreateModal({ isOpen, onClose, onSuccess }: CreateModalP
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="At least 6 characters"
-                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
+                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
                   errors.password ? 'border-red-500' : 'border-gray-200'
                 }`}
               />
@@ -365,7 +428,7 @@ export default function CreateModal({ isOpen, onClose, onSuccess }: CreateModalP
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 placeholder="Confirm Password"
-                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
+                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent dark:bg-slate-700 dark:text-white dark:border-slate-600 transition-colors ${
                   errors.confirmPassword ? 'border-red-500' : 'border-gray-200'
                 }`}
               />
@@ -380,20 +443,6 @@ export default function CreateModal({ isOpen, onClose, onSuccess }: CreateModalP
             {errors.confirmPassword && (
               <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.confirmPassword}</p>
             )}
-          </div>
-
-          {/* Admin Role Field */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 dark:text-white mb-2">Admin Role</label>
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent dark:bg-slate-700 dark:text-white transition-colors"
-            >
-              <option value="user">User</option>
-              <option value="admin">Admin</option>
-            </select>
           </div>
 
           {/* Form Actions */}

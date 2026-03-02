@@ -98,7 +98,6 @@ export default function ProfileView({ role, editPath }: ProfileViewProps) {
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
-      toast.error("Please log in to view your profile");
       router.push("/login");
       return;
     }

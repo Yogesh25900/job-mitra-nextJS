@@ -8,6 +8,8 @@ interface AuthContextProps {
     setIsAuthenticated: (value: boolean) => void;
     user: any;
     setUser: (user: any) => void;
+    token: string | null;
+    setToken: (token: string | null) => void;
     logout: () => Promise<void>;
     loading: boolean;
     checkAuth: () => Promise<void>;
@@ -19,6 +21,7 @@ const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [user, setUser] = useState<any>(null);
+    const [token, setToken] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [hydrated, setHydrated] = useState(false);
     const router = useRouter();
@@ -29,15 +32,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
             if (result?.authenticated) {
                 setUser(result.user);
+                setToken(result.token || null);
                 setIsAuthenticated(true);
             } else {
                 setUser(null);
+                setToken(null);
                 setIsAuthenticated(false);
             }
         } catch (err) {
             console.error('Auth check error:', err);
             setIsAuthenticated(false);
             setUser(null);
+            setToken(null);
         } finally {
             setLoading(false);
         }
@@ -63,6 +69,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             await handleClientLogout();
             setIsAuthenticated(false);
             setUser(null);
+            setToken(null);
             router.push("/login");
             router.refresh();
         } catch (error) {
@@ -75,6 +82,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsAuthenticated,
         user,
         setUser,
+        token,
+        setToken,
         logout,
         loading,
         checkAuth,

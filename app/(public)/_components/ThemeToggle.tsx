@@ -55,7 +55,7 @@ export default function ThemeToggle() {
       aria-label="Toggle theme"
       title={`Theme: ${label}`}
       onClick={cycle}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300"
+      className="theme-toggle-btn"
     >
       {theme === "light" ? (
         <Sun className="h-5 w-5" />
