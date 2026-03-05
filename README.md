@@ -1,51 +1,119 @@
-JobMitra is a Next.js app for job seekers and employers. It includes public browsing, authentication flows, and UI helpers for consistent styling.
+# JobMitra Frontend (Next.js)
 
-## Tech stack
+JobMitra frontend is a multi-role web app for a job portal platform with dedicated experiences for Talent (candidates), Employer (recruiters), and Admin users.
+
+## Features
+
+### Public + Shared
+- Public landing pages (home, about, contact)
+- Job discovery flow with listings, filters, and job details
+- Multi-step application UI flow
+- Shared app header/sidebar/profile and theme toggle
+- Feedback and AI chat entry points
+
+### Talent (Candidate)
+- Talent dashboard-style section
+- Saved jobs and application management views
+- Notifications, recommendations, profile, and settings pages
+
+### Employer (Recruiter)
+- Employer workspace layout and dashboard cards
+- Multi-step job posting wizard
+- My jobs, applicants, candidate, interview, and profile/settings pages
+
+### Admin
+- Admin login and protected admin area
+- User management (create/edit)
+- Job management (create/edit/view)
+- Feedback, profile, and settings pages
+
+## Tech Stack
 - Next.js (App Router) + TypeScript
-- Tailwind CSS + PostCSS
-- Shadcn UI components
-- ESLint + TypeScript strictness
+- React 19
+- Tailwind CSS
+- Axios for API calls
+- Jest + Testing Library (unit/integration)
+- Cypress (E2E)
 
-## Requirements
+## Prerequisites
 - Node.js 18+
-- pnpm (preferred) or npm/yarn/bun
+- npm (or pnpm/yarn/bun)
 
 ## Installation
-1) Install dependencies
+
+1. Install dependencies
+
 ```bash
-pnpm install
-# or
 npm install
-# or
-yarn install
-# or
-bun install
 ```
-2) Create environment file
+
+2. Create local env file
+
 ```bash
 cp .env.example .env.local
-# then fill required keys
 ```
-3) Start the dev server
+
+3. Start development server
+
 ```bash
-pnpm dev
+npm run dev
 ```
-4) Open http://localhost:3000
 
-## Useful scripts
-- `pnpm dev` starts the Next.js dev server.
-- `pnpm lint` runs lint checks.
-- `pnpm build` creates an optimized production build.
-- `pnpm start` serves the production build.
+4. Open app
 
-## Project structure
-- `app/` application routes (auth pages in `app/(auth)/`, public pages in `app/(public)/`).
-- `components/` shared components including UI primitives.
-- `hooks/` reusable hooks.
-- `lib/` utilities.
-- `public/` static assets.
+http://localhost:3000
 
-## Conventions
-- Keep UI pieces in `components/` and colocate small route-specific components under their route folders.
-- Prefer TypeScript and strict typing for forms and API helpers.
-- Run `pnpm lint` before opening a PR to maintain consistency.
+## Environment Variables
+
+Defined in `.env.example`:
+
+- `NEXT_PUBLIC_GOOGLE_CLIENT_ID` : Google OAuth client ID
+- `NEXT_PUBLIC_BACKEND_URL` : Backend base URL for attachments and API-connected frontend flows
+
+Example:
+
+```env
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-oauth-client-id
+NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
+```
+
+## Available Scripts
+
+- `npm run dev` : Start development server
+- `npm run build` : Build production bundle
+- `npm run start` : Run production server
+- `npm run lint` : Run ESLint
+- `npm run test` : Run Jest tests
+- `npm run test:watch` : Run Jest in watch mode
+- `npm run e2e` : Run Cypress in headless mode
+- `npm run e2e:open` : Open Cypress UI runner
+
+## Project Structure
+
+- `app/` : App Router routes grouped by role/section (`(auth)`, `(public)`, `admin`, `api`)
+- `components/` : Shared UI components and global modals
+- `context/` : App-level React context (auth)
+- `lib/actions/` : Server/client action wrappers by domain
+- `lib/api/` : API client modules and endpoint maps
+- `lib/utils/` : Utility helpers
+- `public/` : Static icons and logo assets
+- `cypress/` : End-to-end tests
+
+## Testing
+
+Run unit/integration tests:
+
+```bash
+npm run test
+```
+
+Run E2E tests:
+
+```bash
+npm run e2e
+```
+
+## Notes
+
+- Backend service should be running and reachable through `NEXT_PUBLIC_BACKEND_URL`.
+- If API/auth flows fail locally, verify `.env.local` values first.
